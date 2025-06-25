@@ -249,12 +249,13 @@ where
         Ok(pruned_list)
     }
 
-    fn search(
+    fn search_with_distance(
         &self,
         query: &Vertex<T, N>,
         k_value: usize,
         l_value: u32,
         indices: &mut [u32],
+        distances: Option<&mut [f32]>,
     ) -> ANNResult<u32> {
         if k_value > l_value as usize {
             return Err(ANNError::log_index_error(format!(
@@ -284,12 +285,22 @@ where
         let cmp = self.search_with_l_override(query, scratch, l_value as usize)?;
         let mut pos = 0;
 
+        let mut dummy_distance = vec![0f32];
+        let (distances, with_distance) = if let Some(distances) = distances {
+            (distances, true)
+        } else {
+            (&mut dummy_distance[..], false)
+        };
+
         for i in 0..scratch.best_candidates.size() {
             if scratch.best_candidates[i].id < self.configuration.max_points as u32 {
                 // Filter out the deleted points.
                 if let Ok(delete_set_guard) = self.delete_set.read() {
                     if !delete_set_guard.contains(&scratch.best_candidates[i].id) {
                         indices[pos] = scratch.best_candidates[i].id;
+                        if with_distance {
+                            distances[pos] = scratch.best_candidates[i].distance;
+                        }
                         pos += 1;
                     }
                 } else {
@@ -312,6 +323,16 @@ where
         }
 
         Ok(cmp)
+    }
+
+    fn search(
+        &self,
+        query: &Vertex<T, N>,
+        k_value: usize,
+        l_value: u32,
+        indices: &mut [u32],
+    ) -> ANNResult<u32> {
+        self.search_with_distance(query, k_value, l_value, indices, None)
     }
 
     fn cleanup_graph(&mut self, visit_order: &Vec<u32>) -> ANNResult<()> {
@@ -617,6 +638,41 @@ where
         Ok(())
     }
 
+    fn build_vector(&mut self, vector: &Vec<Vec<T>>) -> ANNResult<()> {
+        let num_points_to_insert = vector.len();
+        if num_points_to_insert == 0 {
+            return Ok(());
+        }
+
+        let dim = N;
+        if dim != self.configuration.dim {
+            return Err(ANNError::log_index_error(format!(
+                "ERROR: Driver requests loading {} dimension, but file has {} dimension.",
+                self.configuration.dim, dim
+            )));
+        }
+
+        if self.configuration.use_pq_dist {
+            // TODO: PQ
+            todo!("PQ is not supported now");
+        }
+
+        if self.configuration.index_write_parameter.num_threads > 0 {
+            set_rayon_num_threads(self.configuration.index_write_parameter.num_threads);
+        }
+
+        self.dataset.build_from_vector(vector)?;
+
+        println!("Using only first {} from file.", num_points_to_insert);
+
+        // TODO: tag_lock
+
+        self.num_active_pts = num_points_to_insert;
+        self.build_with_data_populated()?;
+
+        Ok(())
+    }
+
     fn insert(&mut self, filename: &str, num_points_to_insert: usize) -> ANNResult<()> {
         // fresh-diskANN
         if !file_exists(filename) {
@@ -707,6 +763,80 @@ where
         Ok(())
     }
 
+    fn insert_vector(&mut self, vector: &Vec<Vec<T>>) -> ANNResult<()> {
+        let num_points_to_insert = vector.len();
+        if num_points_to_insert == 0 {
+            return Ok(());
+        }
+
+        let dim = N;
+
+        if dim != self.configuration.dim {
+            return Err(ANNError::log_index_error(format!(
+                "ERROR: Driver requests loading {}  dimension, but file has {} dimension.",
+                self.configuration.dim, dim
+            )));
+        }
+
+        if self.query_scratch_queue.size()? == 0 {
+            self.initialize_query_scratch(
+                5 + self.configuration.index_write_parameter.num_threads,
+                self.configuration.index_write_parameter.search_list_size,
+            )?;
+        }
+
+        if self.configuration.index_write_parameter.num_threads > 0 {
+            // set the thread count of Rayon, otherwise it will use threads as many as logical cores.
+            std::env::set_var(
+                "RAYON_NUM_THREADS",
+                self.configuration
+                    .index_write_parameter
+                    .num_threads
+                    .to_string(),
+            );
+        }
+
+        self.dataset.append_from_vector(vector)?;
+        self.final_graph.extend(
+            num_points_to_insert,
+            self.configuration.index_write_parameter.max_degree,
+        );
+
+        // TODO: this should not consider frozen points
+        let previous_last_pt = self.num_active_pts;
+        self.num_active_pts += num_points_to_insert;
+        self.configuration.max_points += num_points_to_insert;
+
+        println!("Inserting {} vectors from file.", num_points_to_insert);
+
+        // TODO: tag_lock
+        let logger = IndexLogger::new(num_points_to_insert);
+        let timer = Timer::new();
+        execute_with_rayon(
+            previous_last_pt..self.num_active_pts,
+            self.configuration.index_write_parameter.num_threads,
+            |idx| {
+                self.insert_vertex_id(idx as u32)?;
+                logger.vertex_processed()?;
+
+                Ok(())
+            },
+        )?;
+
+        let mut visit_order =
+            Vec::with_capacity(self.num_active_pts + self.configuration.num_frozen_pts);
+        for i in 0..self.num_active_pts {
+            visit_order.push(i as u32);
+        }
+
+        self.cleanup_graph(&visit_order)?;
+        println!("{}", timer.elapsed_seconds_for_step("Insert time: "));
+
+        self.print_stats()?;
+
+        Ok(())
+    }
+
     fn save(&mut self, filename: &str) -> ANNResult<()> {
         let data_file = filename.to_string() + ".data";
         let delete_file = filename.to_string() + ".delete";
@@ -745,6 +875,18 @@ where
     ) -> ANNResult<u32> {
         let query_vector = Vertex::new(<&[T; N]>::try_from(query)?, 0);
         InmemIndex::search(self, &query_vector, k_value, l_value, indices)
+    }
+
+    fn search_with_distance(
+        &self,
+        query: &[T],
+        k_value: usize,
+        l_value: u32,
+        indices: &mut [u32],
+        distances: &mut [f32],
+    ) -> ANNResult<u32> {
+        let query_vector = Vertex::new(<&[T; N]>::try_from(query)?, 0);
+        InmemIndex::search_with_distance(self, &query_vector, k_value, l_value, indices, Some(distances))
     }
 
     fn soft_delete(

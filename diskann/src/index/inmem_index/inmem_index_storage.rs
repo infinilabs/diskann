@@ -113,6 +113,7 @@ where
     /// For each point, first store the number of neighbors,
     /// and then the neighbor list (each as 4 byte u32)
     pub fn save_graph(&mut self, graph_file: &str) -> ANNResult<u64> {
+        println!("===================: {graph_file}");
         let file: File = File::create(graph_file)?;
         let mut out = BufWriter::new(file);
 

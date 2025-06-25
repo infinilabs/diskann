@@ -82,6 +82,39 @@ pub fn copy_aligned_data_from_file<T: Default + Copy>(
     Ok((npts, dim))
 }
 
+/// Copy data from vector
+/// # Arguments
+/// * `bin_file` - filename where the data is
+/// * `data` - destination dataset dto to which the data is copied
+/// * `pts_offset` - offset of points. data will be loaded after this point in dataset
+/// * `npts` - number of points read from bin_file
+/// * `dim` - point dimension read from bin_file
+/// * `rounded_dim` - rounded dimension (padding zero if it's > dim)
+/// # Return 
+/// * `npts` - number of points read from bin_file
+/// * `dim` - point dimension read from bin_file
+pub fn copy_aligned_data_from_vector<T: Default + Copy>(
+    vector: &Vec<Vec<T>>,
+    dataset_dto: DatasetDto<T>,
+    pts_offset: usize,
+    dim: usize,
+) -> std::io::Result<(usize, usize)> {
+    let npts = vector.len();
+    let rounded_dim = dataset_dto.rounded_dim;
+    let offset = pts_offset * rounded_dim;
+
+    for i in 0..npts {
+        let data_slice = &mut dataset_dto.data[offset + i * rounded_dim..offset + i * rounded_dim + dim];
+        data_slice.copy_from_slice(&vector[i]);
+        
+        (i * rounded_dim + dim..i * rounded_dim + rounded_dim).for_each(|j| {
+            dataset_dto.data[j] = T::default();
+        });
+    }
+
+    Ok((npts, dim))
+}
+
 /// Open a file to write
 /// # Arguments
 /// * `writer` - mutable File reference

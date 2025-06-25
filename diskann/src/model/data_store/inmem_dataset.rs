@@ -12,7 +12,7 @@ use vector::{FullPrecisionDistance, Metric};
 
 use crate::common::{ANNError, ANNResult, AlignedBoxWithSlice};
 use crate::model::Vertex;
-use crate::utils::copy_aligned_data_from_file;
+use crate::utils::{copy_aligned_data_from_file, copy_aligned_data_from_vector};
 
 /// Dataset of all in-memory FP points
 #[derive(Debug)]
@@ -98,6 +98,45 @@ where
         Ok(())
     }
 
+    /// Build the dataset from file
+    pub fn build_from_vector(&mut self, vector: &Vec<Vec<T>>) -> ANNResult<()> {
+        let num_points_to_append = vector.len();
+        println!(
+            "Loading {} vectors from file {} into dataset...",
+            num_points_to_append, 1
+        );
+        self.num_active_pts = num_points_to_append;
+
+        copy_aligned_data_from_vector(vector, self.into_dto(), 0, N)?;
+
+        println!("Dataset loaded.");
+        Ok(())
+    }
+
+    /// Append the dataset from file
+    pub fn append_from_vector(&mut self, vector: &Vec<Vec<T>>) -> ANNResult<()> {
+        let num_points_to_append = vector.len();
+        println!(
+            "Appending {} vectors from file {:?} into dataset...",
+            num_points_to_append, 1
+        );
+        if self.num_points + num_points_to_append > self.capacity {
+            return Err(ANNError::log_index_error(format!(
+                "Cannot append {} points to dataset of capacity {}",
+                num_points_to_append, self.capacity
+            )));
+        }
+
+        let pts_offset = self.num_active_pts;
+        copy_aligned_data_from_vector(vector, self.into_dto(), pts_offset, N)?;
+
+        self.num_active_pts += num_points_to_append;
+        self.num_points += num_points_to_append;
+
+        println!("Dataset appended.");
+        Ok(())
+    }
+
     /// Get vertex by id
     pub fn get_vertex(&'a self, id: u32) -> ANNResult<Vertex<'a, T, N>> {
         let start = id as usize * N;
@@ -120,7 +159,6 @@ where
     pub fn get_distance(&self, id1: u32, id2: u32, metric: Metric) -> ANNResult<f32> {
         let vertex1 = self.get_vertex(id1)?;
         let vertex2 = self.get_vertex(id2)?;
-
         Ok(vertex1.compare(&vertex2, metric))
     }
 
@@ -192,7 +230,7 @@ where
 
     /// Convert into dto object
     pub fn into_dto(&mut self) -> DatasetDto<T> {
-        DatasetDto { 
+        DatasetDto {
             data: &mut self.data,
             rounded_dim: N,
         }
@@ -258,11 +296,7 @@ mod dataset_test {
 
         let mut dataset = InmemDataset::<f32, 8>::new(2, 1f32).unwrap();
 
-        match copy_aligned_data_from_file(
-            file_name,
-            dataset.into_dto(),
-            0,
-        ) {
+        match copy_aligned_data_from_file(file_name, dataset.into_dto(), 0) {
             Ok((npts, dim)) => {
                 fs::remove_file(file_name).expect("Failed to delete file");
                 assert!(npts == 2);
@@ -282,4 +316,3 @@ mod dataset_test {
         }
     }
 }
-

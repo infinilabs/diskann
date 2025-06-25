@@ -20,3 +20,6 @@ pub const DIM_128: usize = 128;
 
 /// 256 vertex dimension
 pub const DIM_256: usize = 256;
+
+/// 512 vertex dimension
+pub const DIM_512: usize = 512;

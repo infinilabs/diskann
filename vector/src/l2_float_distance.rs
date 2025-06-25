@@ -76,3 +76,46 @@ pub fn distance_l2_vector_f32<const N: usize>(a: &[f32; N], b: &[f32; N]) -> f32
     }
 }
 
+#[inline(never)]
+pub fn distance_cosine_vector_f32<const N: usize>(a: &[f32; N], b: &[f32; N]) -> f32 {
+    debug_assert_eq!(N % 8, 0);
+    debug_assert_eq!(a.as_ptr().align_offset(32), 0);
+    debug_assert_eq!(b.as_ptr().align_offset(32), 0);
+
+    unsafe {
+        let mut dot = _mm256_setzero_ps();
+        let mut norm_a = _mm256_setzero_ps();
+        let mut norm_b = _mm256_setzero_ps();
+
+        for i in (0..N).step_by(8) {
+            let a_vec = _mm256_load_ps(&a[i]);
+            let b_vec = _mm256_load_ps(&b[i]);
+            
+            // calculate point product
+            dot = _mm256_fmadd_ps(a_vec, b_vec, dot);
+            
+            // Compute squared norm
+            norm_a = _mm256_fmadd_ps(a_vec, a_vec, norm_a);
+            norm_b = _mm256_fmadd_ps(b_vec, b_vec, norm_b);
+        }
+
+        // Horizontal summation
+        let sum_dot = hsum256_ps(dot);
+        let sum_norm_a = hsum256_ps(norm_a);
+        let sum_norm_b = hsum256_ps(norm_b);
+
+        // Compute cosine similarity (with zero-vector handling)
+        let eps = 1e-12f32;
+        sum_dot / (sum_norm_a.sqrt().max(eps) * sum_norm_b.sqrt().max(eps))
+    }
+}
+
+// Helper function: AVX register horizontal sum
+#[inline(always)]
+unsafe fn hsum256_ps(v: __m256) -> f32 {
+    let x128: __m128 = _mm_add_ps(_mm256_extractf128_ps(v, 1), _mm256_castps256_ps128(v));
+    let x64 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));
+    let x32 = _mm_add_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
+    _mm_cvtss_f32(x32)
+}
+

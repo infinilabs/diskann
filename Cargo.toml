@@ -15,7 +15,7 @@ members = [
   "platform",
   "logger",
   "vector_base64"
-]
+, "api/memory_insert_query"]
 resolver = "2"
 
 [profile.release]

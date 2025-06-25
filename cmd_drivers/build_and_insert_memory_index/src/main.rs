@@ -11,7 +11,7 @@ use diskann::{
     model::{
         IndexWriteParametersBuilder,
         IndexConfiguration, 
-        vertex::{DIM_128, DIM_256, DIM_104}
+        vertex::{DIM_128, DIM_256, DIM_104, DIM_512}
     },
     utils::{load_metadata_from_file, Timer},
 };
@@ -37,7 +37,8 @@ where
     T: Default + Copy + Sync + Send + Into<f32>,
     [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
     [T; DIM_128]: FullPrecisionDistance<T, DIM_128>,
-    [T; DIM_256]: FullPrecisionDistance<T, DIM_256>
+    [T; DIM_256]: FullPrecisionDistance<T, DIM_256>,
+    [T; DIM_512]: FullPrecisionDistance<T, DIM_512>,
 {
     let index_write_parameters = IndexWriteParametersBuilder::new(l, r)
         .with_alpha(alpha)

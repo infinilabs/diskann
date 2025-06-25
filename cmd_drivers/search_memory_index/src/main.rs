@@ -9,7 +9,7 @@ use diskann::{
     index,
     model::{
         configuration::index_write_parameters::{default_param_vals, IndexWriteParametersBuilder},
-        vertex::{DIM_104, DIM_128, DIM_256},
+        vertex::{DIM_104, DIM_128, DIM_256, DIM_512},
         IndexConfiguration,
     },
     utils::{load_metadata_from_file, save_bin_u32},
@@ -38,6 +38,7 @@ where
     [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
     [T; DIM_128]: FullPrecisionDistance<T, DIM_128>,
     [T; DIM_256]: FullPrecisionDistance<T, DIM_256>,
+    [T; DIM_512]: FullPrecisionDistance<T, DIM_512>,
 {
     // Load the query file
     let (query, query_num, query_dim, query_aligned_dim) =

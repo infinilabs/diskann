@@ -9,7 +9,7 @@ use diskann::{
     index::ann_disk_index::create_disk_index,
     model::{
         default_param_vals::ALPHA,
-        vertex::{DIM_104, DIM_128, DIM_256},
+        vertex::{DIM_104, DIM_128, DIM_256, DIM_512},
         DiskIndexBuildParameters, IndexConfiguration, IndexWriteParametersBuilder,
     },
     storage::DiskIndexStorage,
@@ -38,6 +38,7 @@ where
     [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
     [T; DIM_128]: FullPrecisionDistance<T, DIM_128>,
     [T; DIM_256]: FullPrecisionDistance<T, DIM_256>,
+    [T; DIM_512]: FullPrecisionDistance<T, DIM_512>,
 {
     let disk_index_build_parameters =
         DiskIndexBuildParameters::new(search_ram_limit_gb, index_build_ram_limit_gb)?;

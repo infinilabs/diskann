@@ -2,7 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT license.
  */
-use crate::l2_float_distance::{distance_l2_vector_f16, distance_l2_vector_f32};
+use crate::l2_float_distance::{distance_cosine_vector_f32, distance_l2_vector_f16, distance_l2_vector_f32};
 use crate::{Half, Metric};
 
 /// Distance contract for full-precision vertex
@@ -19,7 +19,8 @@ impl<const N: usize> FullPrecisionDistance<f32, N> for [f32; N] {
     fn distance_compare(a: &[f32; N], b: &[f32; N], metric: Metric) -> f32 {
         match metric {
             Metric::L2 => distance_l2_vector_f32::<N>(a, b),
-            _ => panic!("Not supported Metric type {:?}", metric),
+            Metric::Cosine => distance_cosine_vector_f32::<N>(a, b),
+            //_ => panic!("Not supported Metric type {:?}", metric),
         }
     }
 }
