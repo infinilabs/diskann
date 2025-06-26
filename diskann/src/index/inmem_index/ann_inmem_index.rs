@@ -6,6 +6,8 @@
 
 //! ANN in-memory index abstraction
 
+use std::fmt::Debug;
+
 use vector::FullPrecisionDistance;
 
 use crate::model::{vertex::{DIM_104, DIM_128, DIM_256, DIM_512}, IndexConfiguration};

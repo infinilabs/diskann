@@ -3,6 +3,7 @@
  * Licensed under the MIT license.
  */
 use std::cmp;
+use std::fmt::Debug;
 use std::sync::RwLock;
 use std::time::Duration;
 
@@ -26,7 +27,7 @@ use crate::utils::{set_rayon_num_threads, Timer};
 /// In-memory Index
 pub struct InmemIndex<T, const N: usize>
 where
-    [T; N]: FullPrecisionDistance<T, N>,
+    [T; N]: FullPrecisionDistance<T, N>
 {
     /// Dataset
     pub dataset: InmemDataset<T, N>,
@@ -581,7 +582,7 @@ where
 impl<T, const N: usize> ANNInmemIndex<T> for InmemIndex<T, N>
 where
     T: Default + Copy + Sync + Send + Into<f32>,
-    [T; N]: FullPrecisionDistance<T, N>,
+    [T; N]: FullPrecisionDistance<T, N>
 {
     fn build(&mut self, filename: &str, num_points_to_load: usize) -> ANNResult<()> {
         // TODO: fresh-diskANN

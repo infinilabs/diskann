@@ -289,8 +289,8 @@ fn main() -> ANNResult<()> {
     )?;
     */
 
-    let mut store: DiskANNStore<f32, 512> =
-        DiskANNStore::new(metric, max_degree, search_list_size, alpha, num_threads).unwrap();
+    let mut store: DiskANNStore<f32> =
+        DiskANNStore::new(metric, 512, max_degree, search_list_size, alpha, num_threads).unwrap();
     //store.init_data(&insert_points).unwrap();
     store.insert_data(&insert_points).unwrap();
 

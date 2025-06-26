@@ -14,7 +14,7 @@ use diskann::{
 
 use vector::{FullPrecisionDistance, Metric};
 
-pub struct DiskANNStore<T, const N: usize>
+pub struct DiskANNStore<T>
 where
     T: Default + Copy + Sync + Send + Into<f32> + 'static,
     [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
@@ -39,7 +39,7 @@ where
     _phantom_data: PhantomData<T>,
 }
 
-impl<T, const N: usize> DiskANNStore<T, N>
+impl<T> DiskANNStore<T>
 where
     T: Default + Copy + Sync + Send + Into<f32> + From<f32> + 'static,
     [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
@@ -49,6 +49,7 @@ where
 {
     pub fn new(
         metric: Metric,
+        dimension: usize,
         max_degree: u32,
         search_list_size: u32,
         alpha: f32,
@@ -62,8 +63,8 @@ where
 
         let config = IndexConfiguration::new(
             metric,
-            N,
-            round_up(N as u64, 8_u64) as usize,
+            dimension,
+            round_up(dimension as u64, 8_u64) as usize,
             8388608,
             false,
             0,
@@ -74,10 +75,10 @@ where
         );
         let index = create_inmem_index::<T>(config.clone())?;
 
-        let mut create_points = vec![vec![T::default(); N]; 5];
+        let mut create_points = vec![vec![T::default(); dimension]; 5];
 
         for i in 0..5 {
-            for j in 0..512 {
+            for j in 0..dimension {
                 create_points[i][j] = ((i+j) as f32).into();
             }
         }
