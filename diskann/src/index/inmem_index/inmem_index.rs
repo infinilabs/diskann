@@ -3,7 +3,6 @@
  * Licensed under the MIT license.
  */
 use std::cmp;
-use std::fmt::Debug;
 use std::sync::RwLock;
 use std::time::Duration;
 

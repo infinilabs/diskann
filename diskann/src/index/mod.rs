@@ -6,6 +6,9 @@ mod inmem_index;
 pub use inmem_index::ann_inmem_index::*;
 pub use inmem_index::InmemIndex;
 
+#[cfg(feature = "disk_store")]
 mod disk_index;
+
+#[cfg(feature = "disk_store")]
 pub use disk_index::*;
 

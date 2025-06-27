@@ -2,6 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT license.
  */
+use cfg_if::cfg_if;
 pub mod file_util;
 pub use file_util::*;
 
@@ -15,8 +16,18 @@ pub use bit_vec_extension::*;
 pub mod rayon_util;
 pub use rayon_util::*;
 
-pub mod timer;
-pub use timer::*;
+cfg_if! {
+if #[cfg(target_os = "windows")] {
+    pub mod timer;
+    pub use timer::*;
+} else {
+    pub mod perf_linux;
+    pub use perf_linux::*;
+    
+    pub mod timer_linux;
+    pub use timer_linux::*;
+}
+}
 
 pub mod cached_reader;
 pub use cached_reader::*;

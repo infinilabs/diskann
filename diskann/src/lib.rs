@@ -18,6 +18,7 @@ pub mod common;
 
 pub mod index;
 
+#[cfg(feature = "disk_store")]
 pub mod storage;
 
 pub mod instrumentation;

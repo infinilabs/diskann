@@ -13,7 +13,8 @@ thiserror = "1.0.40"
 bytemuck = "1.7.0"
 
 [build-dependencies]
-cc = "1.0.79"
+#cc = "1.0.79"
+cc = "1.2.27"
 
 [dev-dependencies]
 base64 = "0.21.2"

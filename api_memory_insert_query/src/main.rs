@@ -184,7 +184,7 @@ where
 const TEST_DATA_FILE: &str = "DiskANN\\rust\\diskann\\tests\\data\\siftsmall_learn_256pts.fbin";
 const TEST_DELETE_DATA_FILE: &str = "DiskANN\\rust\\diskann\\tests\\data\\delete_set_50pts.bin";
 const TEST_SAVE_PATH: &str = "DiskANN\\rust\\api\\memory_insert_query\\output\\output";
-const VECTOR_FILE: &str = "input\\embeddings.json";
+const VECTOR_FILE: &str = "input/embeddings.json";
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Embeddings {
@@ -194,6 +194,7 @@ struct Embeddings {
 
 fn main() -> ANNResult<()> {
     println!("{:?}", std::env::current_dir().unwrap());
+    
     let json_file = File::open(VECTOR_FILE)?;
     let json_reader = BufReader::new(json_file);
     let items: Vec<Embeddings> = serde_json::from_reader(json_reader).unwrap();
@@ -347,7 +348,7 @@ fn main() -> ANNResult<()> {
                 .unwrap();
 
                 for (i, &j) in indices.iter().enumerate() {
-                    if distances[i] > 0.1 {
+                    if distances[i] > 0.5 {
                         continue;
                     }
 
