@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 use diskann::{
     common::ANNResult,
-    index::{ANNInmemIndex, create_inmem_index},
+    index::{ANNInmemIndex, create_inmem_index, INIT_WARMUP_DATA_LEN},
     model::{
         IndexConfiguration,
         configuration::index_write_parameters::IndexWriteParametersBuilder,
@@ -54,6 +54,7 @@ where
         search_list_size: u32,
         alpha: f32,
         num_threads: u32,
+        max_point: usize
     ) -> ANNResult<Self> {
         let index_write_parameters = IndexWriteParametersBuilder::new(search_list_size, max_degree)
             .with_alpha(alpha)
@@ -65,7 +66,8 @@ where
             metric,
             dimension,
             round_up(dimension as u64, 8_u64) as usize,
-            8388608,
+            //8388608,
+            max_point,
             false,
             0,
             false,
@@ -77,7 +79,7 @@ where
 
         let mut create_points = vec![vec![T::default(); dimension]; 5];
 
-        for i in 0..5 {
+        for i in 0..INIT_WARMUP_DATA_LEN as usize{
             for j in 0..dimension {
                 create_points[i][j] = ((i+j) as f32).into();
             }
@@ -104,7 +106,7 @@ where
     }
 
     pub fn insert_data(&mut self, data: &Vec<Vec<T>>) -> ANNResult<()> {
-        self.index.build_vector(data)
+        self.index.insert_vector(data)
     }
 
     pub fn soft_delete(&mut self, vertex_ids_to_delete: Vec<u32>) -> ANNResult<()> {

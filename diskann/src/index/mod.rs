@@ -4,7 +4,7 @@
  */
 mod inmem_index;
 pub use inmem_index::ann_inmem_index::*;
-pub use inmem_index::InmemIndex;
+pub use inmem_index::{InmemIndex, INIT_WARMUP_DATA_LEN};
 
 #[cfg(feature = "disk_store")]
 mod disk_index;

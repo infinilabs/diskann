@@ -27,7 +27,9 @@ pub struct AlignedBoxWithSlice<T> {
     val: Box<[T]>,
 }
 
-impl<T> AlignedBoxWithSlice<T> {
+impl<T> AlignedBoxWithSlice<T> 
+where T: Copy
+{
     /// Creates a new `AlignedBoxWithSlice` with the given capacity and alignment.
     /// The allocated memory are set to 0.
     ///
@@ -53,6 +55,37 @@ impl<T> AlignedBoxWithSlice<T> {
         };
 
         Ok(Self { layout, val })
+    }
+
+    pub fn double_capacity(&mut self) -> ANNResult<()> {
+        self.ensure_capacity(self.capacity() * 2)
+    }
+    
+    pub fn ensure_capacity(&mut self, capacity: usize) -> ANNResult<()> {
+        let orig_capacity = self.capacity();
+        if capacity <= orig_capacity {
+            return Ok(());
+        }
+
+        let power = (capacity - 1 + orig_capacity) / orig_capacity;
+        let new_capacity = power * orig_capacity;
+
+        let mut new_slice: AlignedBoxWithSlice<T> = AlignedBoxWithSlice::new(new_capacity, self.alignment())?;
+
+        // copy original slice to new slice
+        new_slice.val[0..self.val.len()].copy_from_slice(&self.val);
+        
+        *self = new_slice;
+        
+        Ok(())
+    }
+    
+    pub fn capacity(&self) -> usize {
+        self.val.len()
+    }
+    
+    pub fn alignment(&self) -> usize {
+        self.layout.align()
     }
 
     /// Returns a reference to the slice.

@@ -98,6 +98,16 @@ where
         Ok(())
     }
 
+    pub fn or_increase_capacity(&mut self, new_data_len: usize) -> ANNResult<bool> {
+        let need_capacity = (self.num_active_pts + new_data_len) * N;
+        if need_capacity > self.data.capacity() {
+            self.data.ensure_capacity(need_capacity)?;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
+    }
+
     /// Build the dataset from file
     pub fn build_from_vector(&mut self, vector: &Vec<Vec<T>>) -> ANNResult<()> {
         let num_points_to_append = vector.len();
@@ -105,8 +115,8 @@ where
             "Loading {} vectors from file {} into dataset...",
             num_points_to_append, 1
         );
+        
         self.num_active_pts = num_points_to_append;
-
         copy_aligned_data_from_vector(vector, self.into_dto(), 0, N)?;
 
         println!("Dataset loaded.");

@@ -28,6 +28,7 @@ pub struct DiskScratchDataset<T, const N: usize>
 }
 
 impl<T, const N: usize> DiskScratchDataset<T, N>
+where T: Copy
 {
     /// Create DiskScratchDataset instance
     pub fn new() -> ANNResult<Self> {

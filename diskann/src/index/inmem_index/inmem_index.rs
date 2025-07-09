@@ -23,6 +23,9 @@ use crate::utils::file_util::{file_exists, load_metadata_from_file};
 use crate::utils::rayon_util::execute_with_rayon;
 use crate::utils::{set_rayon_num_threads, Timer};
 
+/// Used for warmup dataset, or it will cannot build graph and crash
+pub const INIT_WARMUP_DATA_LEN: u32 = 5;
+
 /// In-memory Index
 pub struct InmemIndex<T, const N: usize>
 where
@@ -92,6 +95,15 @@ where
             query_scratch_queue,
             delete_set,
         })
+    }
+
+    pub fn or_increase_capacity(&mut self, new_data_len: usize) -> ANNResult<bool> {
+        if self.dataset.or_increase_capacity(new_data_len)? {
+            //self.configuration.max_points += new_data_len;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     /// Get distance between two vertices.
@@ -297,7 +309,7 @@ where
                 // Filter out the deleted points.
                 if let Ok(delete_set_guard) = self.delete_set.read() {
                     if !delete_set_guard.contains(&scratch.best_candidates[i].id) {
-                        indices[pos] = scratch.best_candidates[i].id;
+                        indices[pos] = scratch.best_candidates[i].id - INIT_WARMUP_DATA_LEN;
                         if with_distance {
                             distances[pos] = scratch.best_candidates[i].distance;
                         }
@@ -660,7 +672,8 @@ where
         if self.configuration.index_write_parameter.num_threads > 0 {
             set_rayon_num_threads(self.configuration.index_write_parameter.num_threads);
         }
-
+        
+        self.or_increase_capacity(vector.len())?;
         self.dataset.build_from_vector(vector)?;
 
         println!("Using only first {} from file.", num_points_to_insert);
@@ -796,6 +809,7 @@ where
             );
         }
 
+        self.or_increase_capacity(vector.len())?;
         self.dataset.append_from_vector(vector)?;
         self.final_graph.extend(
             num_points_to_insert,

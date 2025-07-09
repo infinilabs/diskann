@@ -4,7 +4,7 @@
  */
 #[allow(clippy::module_inception)]
 mod inmem_index;
-pub use inmem_index::InmemIndex;
+pub use inmem_index::{InmemIndex, INIT_WARMUP_DATA_LEN};
 
 mod inmem_index_storage;
 

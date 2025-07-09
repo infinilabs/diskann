@@ -1,0 +1,530 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'build_memory_index'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=build_memory_index",
+                    "--package=build_memory_index"
+                ],
+                "filter": {
+                    "name": "build_memory_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'build_memory_index'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=build_memory_index",
+                    "--package=build_memory_index"
+                ],
+                "filter": {
+                    "name": "build_memory_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'diskann'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=diskann"
+                ],
+                "filter": {
+                    "name": "diskann",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'distance_bench'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=distance_bench",
+                    "--package=diskann"
+                ],
+                "filter": {
+                    "name": "distance_bench",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'kmeans_bench'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=kmeans_bench",
+                    "--package=diskann"
+                ],
+                "filter": {
+                    "name": "kmeans_bench",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug benchmark 'neighbor_bench'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bench=neighbor_bench",
+                    "--package=diskann"
+                ],
+                "filter": {
+                    "name": "neighbor_bench",
+                    "kind": "bench"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'logger'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=logger"
+                ],
+                "filter": {
+                    "name": "logger",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug example 'trace_example'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=trace_example",
+                    "--package=logger"
+                ],
+                "filter": {
+                    "name": "trace_example",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in example 'trace_example'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--example=trace_example",
+                    "--package=logger"
+                ],
+                "filter": {
+                    "name": "trace_example",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'vector'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=vector"
+                ],
+                "filter": {
+                    "name": "vector",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'build_and_insert_memory_index'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=build_and_insert_memory_index",
+                    "--package=build_and_insert_memory_index"
+                ],
+                "filter": {
+                    "name": "build_and_insert_memory_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'build_and_insert_memory_index'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=build_and_insert_memory_index",
+                    "--package=build_and_insert_memory_index"
+                ],
+                "filter": {
+                    "name": "build_and_insert_memory_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'load_and_insert_memory_index'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=load_and_insert_memory_index",
+                    "--package=load_and_insert_memory_index"
+                ],
+                "filter": {
+                    "name": "load_and_insert_memory_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'load_and_insert_memory_index'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=load_and_insert_memory_index",
+                    "--package=load_and_insert_memory_index"
+                ],
+                "filter": {
+                    "name": "load_and_insert_memory_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'convert_f32_to_bf16'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=convert_f32_to_bf16",
+                    "--package=convert_f32_to_bf16"
+                ],
+                "filter": {
+                    "name": "convert_f32_to_bf16",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'convert_f32_to_bf16'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=convert_f32_to_bf16",
+                    "--package=convert_f32_to_bf16"
+                ],
+                "filter": {
+                    "name": "convert_f32_to_bf16",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'search_memory_index'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=search_memory_index",
+                    "--package=search_memory_index"
+                ],
+                "filter": {
+                    "name": "search_memory_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'search_memory_index'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=search_memory_index",
+                    "--package=search_memory_index"
+                ],
+                "filter": {
+                    "name": "search_memory_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'build_disk_index'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=build_disk_index",
+                    "--package=build_disk_index"
+                ],
+                "filter": {
+                    "name": "build_disk_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'build_disk_index'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=build_disk_index",
+                    "--package=build_disk_index"
+                ],
+                "filter": {
+                    "name": "build_disk_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'build_and_insert_delete_memory_index'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=build_and_insert_delete_memory_index",
+                    "--package=build_and_insert_delete_memory_index"
+                ],
+                "filter": {
+                    "name": "build_and_insert_delete_memory_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'build_and_insert_delete_memory_index'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=build_and_insert_delete_memory_index",
+                    "--package=build_and_insert_delete_memory_index"
+                ],
+                "filter": {
+                    "name": "build_and_insert_delete_memory_index",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'platform'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=platform"
+                ],
+                "filter": {
+                    "name": "platform",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'vector_base64'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=vector_base64",
+                    "--package=vector_base64"
+                ],
+                "filter": {
+                    "name": "vector_base64",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'vector_base64'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=vector_base64",
+                    "--package=vector_base64"
+                ],
+                "filter": {
+                    "name": "vector_base64",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'api_memory_insert_query'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=api_memory_insert_query"
+                ],
+                "filter": {
+                    "name": "api_memory_insert_query",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'api_memory_insert_query'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=api_memory_insert_query",
+                    "--package=api_memory_insert_query"
+                ],
+                "filter": {
+                    "name": "api_memory_insert_query",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'api_memory_insert_query'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=api_memory_insert_query",
+                    "--package=api_memory_insert_query"
+                ],
+                "filter": {
+                    "name": "api_memory_insert_query",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
