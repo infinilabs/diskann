@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-mod diskann_store;
+mod mem_ann_store;
 
 /// 512 vertex dimension
 pub const DIM_512: usize = 512;
@@ -323,6 +323,7 @@ fn main() -> ANNResult<()> {
             for l_value in k_value + 50..k_value + 51 {
                 let mut indices = vec![0; k_value];
                 let mut distances = vec![0f32; k_value];
+                store.save_to_file(save_path)
                 let a = store.query(
                     &insert_points[i],
                     k_value,

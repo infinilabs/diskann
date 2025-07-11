@@ -1,1 +1,1 @@
-pub mod diskann_store;
+pub mod mem_ann_store;

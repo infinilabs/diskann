@@ -65,7 +65,10 @@ where
         );
         self.num_active_pts = num_points_to_load;
 
-        copy_aligned_data_from_file(filename, self.into_dto(), 0)?;
+        let (npts, _dim) = copy_aligned_data_from_file(filename, self.into_dto(), 0)?;
+        if npts != num_points_to_load {
+            self.num_active_pts = npts;
+        }
 
         println!("Dataset loaded.");
         Ok(())

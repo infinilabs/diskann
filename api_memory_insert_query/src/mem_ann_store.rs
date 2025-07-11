@@ -14,7 +14,7 @@ use diskann::{
 
 use vector::{FullPrecisionDistance, Metric};
 
-pub struct DiskANNStore<T>
+pub struct MemANNStore<T>
 where
     T: Default + Copy + Sync + Send + Into<f32> + 'static,
     [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
@@ -39,7 +39,7 @@ where
     _phantom_data: PhantomData<T>,
 }
 
-impl<T> DiskANNStore<T>
+impl<T> MemANNStore<T>
 where
     T: Default + Copy + Sync + Send + Into<f32> + From<f32> + 'static,
     [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
@@ -116,6 +116,10 @@ where
 
     pub fn save_to_file(&mut self, save_path: &str) -> ANNResult<()> {
         self.index.save(save_path)
+    }
+
+    pub fn load_from_file(&mut self, save_path: &str) -> ANNResult<()> {
+        self.index.load(save_path, 0)
     }
 
     pub fn query(
