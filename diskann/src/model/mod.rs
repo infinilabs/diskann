@@ -24,11 +24,18 @@ pub mod vertex;
 pub use vertex::Vertex;
 
 cfg_if! {
-if #[cfg(feature = "disk_store")] {
-pub mod pq;
-pub use pq::*;
+    if #[cfg(feature = "disk_store")] {
+        pub mod pq;
+        pub use pq::*;
 
-pub mod windows_aligned_file_reader;
-pub use windows_aligned_file_reader::*;
-}
+        cfg_if! {
+            if #[cfg(target_os = "windows")] {
+                pub mod windows_aligned_file_reader;
+                pub use windows_aligned_file_reader::*;
+            } else {
+                //pub mod linux_aligned_file_reader;
+                //pub use linux_aligned_file_reader::*;
+            }
+        }
+    }
 }

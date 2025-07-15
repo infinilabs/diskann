@@ -105,7 +105,7 @@ where
         self.index.build_vector(data)
     }
 
-    pub fn insert_data(&mut self, data: &Vec<Vec<T>>) -> ANNResult<()> {
+    pub fn insert_data(&mut self, data: &Vec<Vec<T>>) -> ANNResult<(usize, usize)> {
         self.index.insert_vector(data)
     }
 

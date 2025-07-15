@@ -6,13 +6,18 @@
 
 //! In-memory Dataset
 
+use byteorder::{LittleEndian, ReadBytesExt};
 use rayon::prelude::*;
+use std::fs::File;
+use std::io::Seek;
 use std::mem;
 use vector::{FullPrecisionDistance, Metric};
 
 use crate::common::{ANNError, ANNResult, AlignedBoxWithSlice};
 use crate::model::Vertex;
-use crate::utils::{copy_aligned_data_from_file, copy_aligned_data_from_vector};
+use crate::utils::{
+    copy_aligned_data_from_file, copy_aligned_data_from_reader, copy_aligned_data_from_vector,
+};
 
 /// Dataset of all in-memory FP points
 #[derive(Debug)]
@@ -63,9 +68,16 @@ where
             "Loading {} vectors from file {} into dataset...",
             num_points_to_load, filename
         );
-        self.num_active_pts = num_points_to_load;
 
-        let (npts, _dim) = copy_aligned_data_from_file(filename, self.into_dto(), 0)?;
+        // read number of point firstly to increase later
+        let mut reader = File::open(filename)?;
+        let new_data_len = reader.read_i32::<LittleEndian>()? as usize;
+        reader.seek(std::io::SeekFrom::Start(0))?;
+
+        self.or_increase_capacity(new_data_len)?;
+
+        let pts_offset = self.num_active_pts;
+        let (npts, _dim) = copy_aligned_data_from_reader(reader, self.into_dto(), pts_offset)?;
         if npts != num_points_to_load {
             self.num_active_pts = npts;
         }
@@ -118,7 +130,7 @@ where
             "Loading {} vectors from file {} into dataset...",
             num_points_to_append, 1
         );
-        
+
         self.num_active_pts = num_points_to_append;
         copy_aligned_data_from_vector(vector, self.into_dto(), 0, N)?;
 
@@ -127,7 +139,8 @@ where
     }
 
     /// Append the dataset from file
-    pub fn append_from_vector(&mut self, vector: &Vec<Vec<T>>) -> ANNResult<()> {
+    /// Return (id_start, id_len)
+    pub fn append_from_vector(&mut self, vector: &Vec<Vec<T>>) -> ANNResult<(usize, usize)> {
         let num_points_to_append = vector.len();
         println!(
             "Appending {} vectors from file {:?} into dataset...",
@@ -147,7 +160,7 @@ where
         self.num_points += num_points_to_append;
 
         println!("Dataset appended.");
-        Ok(())
+        Ok((pts_offset, num_points_to_append))
     }
 
     /// Get vertex by id

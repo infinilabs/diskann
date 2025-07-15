@@ -58,8 +58,26 @@ pub fn copy_aligned_data_from_file<T: Default + Copy>(
     dataset_dto: DatasetDto<T>,
     pts_offset: usize,
 ) -> std::io::Result<(usize, usize)> {
-    let mut reader = File::open(bin_file)?;
+    let reader = File::open(bin_file)?;
+    copy_aligned_data_from_reader(reader, dataset_dto, pts_offset)
+}
 
+/// Copy data from a reader
+/// # Arguments
+/// * `reader` - the reader where the data is
+/// * `data` - destination dataset dto to which the data is copied
+/// * `pts_offset` - offset of points. data will be loaded after this point in dataset
+/// * `npts` - number of points read from bin_file
+/// * `dim` - point dimension read from bin_file
+/// * `rounded_dim` - rounded dimension (padding zero if it's > dim)
+/// # Return 
+/// * `npts` - number of points read from bin_file
+/// * `dim` - point dimension read from bin_file
+pub fn copy_aligned_data_from_reader<T: Default + Copy>(
+    mut reader: impl Read,
+    dataset_dto: DatasetDto<T>,
+    pts_offset: usize,
+) -> std::io::Result<(usize, usize)> {
     let npts = reader.read_i32::<LittleEndian>()? as usize;
     let dim = reader.read_i32::<LittleEndian>()? as usize;
     let rounded_dim = dataset_dto.rounded_dim;

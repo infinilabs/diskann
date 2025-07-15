@@ -33,7 +33,7 @@ where T : Default + Copy + Sync + Send + Into<f32>
     fn insert(&mut self, filename: &str, num_points_to_insert: usize) -> ANNResult<()>;
 
     /// insert index
-    fn insert_vector(&mut self, points: &Vec<Vec<T>>) -> ANNResult<()>;
+    fn insert_vector(&mut self, points: &Vec<Vec<T>>) -> ANNResult<(usize, usize)>;
 
     /// Search the index for K nearest neighbors of query using given L value, for benchmarking purposes
     fn search(&self, query : &[T], k_value : usize, l_value : u32, indices : &mut[u32]) -> ANNResult<u32>;

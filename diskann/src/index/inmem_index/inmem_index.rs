@@ -29,7 +29,7 @@ pub const INIT_WARMUP_DATA_LEN: u32 = 5;
 /// In-memory Index
 pub struct InmemIndex<T, const N: usize>
 where
-    [T; N]: FullPrecisionDistance<T, N>
+    [T; N]: FullPrecisionDistance<T, N>,
 {
     /// Dataset
     pub dataset: InmemDataset<T, N>,
@@ -98,12 +98,7 @@ where
     }
 
     pub fn or_increase_capacity(&mut self, new_data_len: usize) -> ANNResult<bool> {
-        if self.dataset.or_increase_capacity(new_data_len)? {
-            //self.configuration.max_points += new_data_len;
-            Ok(true)
-        } else {
-            Ok(false)
-        }
+        self.dataset.or_increase_capacity(new_data_len)
     }
 
     /// Get distance between two vertices.
@@ -593,7 +588,7 @@ where
 impl<T, const N: usize> ANNInmemIndex<T> for InmemIndex<T, N>
 where
     T: Default + Copy + Sync + Send + Into<f32>,
-    [T; N]: FullPrecisionDistance<T, N>
+    [T; N]: FullPrecisionDistance<T, N>,
 {
     fn build(&mut self, filename: &str, num_points_to_load: usize) -> ANNResult<()> {
         // TODO: fresh-diskANN
@@ -672,7 +667,7 @@ where
         if self.configuration.index_write_parameter.num_threads > 0 {
             set_rayon_num_threads(self.configuration.index_write_parameter.num_threads);
         }
-        
+
         self.or_increase_capacity(vector.len())?;
         self.dataset.build_from_vector(vector)?;
 
@@ -776,10 +771,10 @@ where
         Ok(())
     }
 
-    fn insert_vector(&mut self, vector: &Vec<Vec<T>>) -> ANNResult<()> {
+    fn insert_vector(&mut self, vector: &Vec<Vec<T>>) -> ANNResult<(usize, usize)> {
         let num_points_to_insert = vector.len();
         if num_points_to_insert == 0 {
-            return Ok(());
+            return Ok((0, 0));
         }
 
         let dim = N;
@@ -810,7 +805,7 @@ where
         }
 
         self.or_increase_capacity(vector.len())?;
-        self.dataset.append_from_vector(vector)?;
+        let result = self.dataset.append_from_vector(vector)?;
         self.final_graph.extend(
             num_points_to_insert,
             self.configuration.index_write_parameter.max_degree,
@@ -848,7 +843,7 @@ where
 
         self.print_stats()?;
 
-        Ok(())
+        Ok(result)
     }
 
     fn save(&mut self, filename: &str) -> ANNResult<()> {
@@ -863,9 +858,19 @@ where
     }
 
     fn load(&mut self, filename: &str, expected_num_points: usize) -> ANNResult<()> {
-        self.num_active_pts = expected_num_points;
+        // self.num_active_pts = expected_num_points;
+
+        let num_active_pts_saved = self.dataset.num_active_pts;
         self.dataset
             .build_from_file(&format!("{}.data", filename), expected_num_points)?;
+
+        let diff = self.dataset.num_active_pts - num_active_pts_saved;
+        self.num_active_pts = self.dataset.num_active_pts;
+
+        self.final_graph
+            .extend(diff, self.configuration.index_write_parameter.max_degree);
+
+        self.configuration.max_points += diff;
 
         self.load_graph(filename, expected_num_points)?;
         self.load_delete_list(&format!("{}.delete", filename))?;
@@ -900,7 +905,14 @@ where
         distances: &mut [f32],
     ) -> ANNResult<u32> {
         let query_vector = Vertex::new(<&[T; N]>::try_from(query)?, 0);
-        InmemIndex::search_with_distance(self, &query_vector, k_value, l_value, indices, Some(distances))
+        InmemIndex::search_with_distance(
+            self,
+            &query_vector,
+            k_value,
+            l_value,
+            indices,
+            Some(distances),
+        )
     }
 
     fn soft_delete(
