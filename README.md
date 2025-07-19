@@ -45,5 +45,3 @@ This project forked off from [Microsoft/DiskANN](https://github.com/microsoft/Di
 # License
 
 This project is released under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-References: DiskANN was introduced in [Jayaram et al., NeurIPS 2019](https://papers.nips.cc/paper/9527-rand-nsg-fast-accurate-billion-point-nearest-neighbor-search-on-a-single-node.pdf#:~:text=This%20makes%20them%20expensive%20and,query%20latency%20and%20high%20density) as a [disk-based ANN solution](https://github.com/microsoft/DiskANN#:~:text=DiskANN%20is%20a%20suite%20of,time). This crate’s design follows the DiskANN methodology, adapted for Rust with support for modern Rust features (parallelism, memory mapping, etc.)
