@@ -7,6 +7,7 @@
 DiskANN is a suite of scalable, accurate, cost-effective approximate nearest neighbor (ANN) search algorithms for large-scale vector search. 
 It uses a graph-based index (Vamana) to manage very large datasets with high recall and low latency. 
 For example, DiskANN can index, store, and query a billion-point dataset on a single machine with 64GB RAM and an SSD, achieving high recall and low query latency.  
+
 The INFINI Labs DiskANN project provides a pure Rust implementation of these ideas. This crate was originally forked from Microsoft’s partial Rust port (the DiskANN/rust folder) and extended to be complete. 
 In particular, it implements the previously-missing disk-based query functionality, enabling full end-to-end DiskANN indexing and search in Rust.
 
@@ -43,6 +44,6 @@ This project forked off from [Microsoft/DiskANN](https://github.com/microsoft/Di
 
 # License
 
-This project is released under the MIT License. See the LICENSE file for details.
+This project is released under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-References: DiskANN was introduced in [Jayaram et al., NeurIPS 2019] as a disk-based ANN solution. This crate’s design follows the DiskANN methodology, adapted for Rust with support for modern Rust features (parallelism, memory mapping, etc.)
+References: DiskANN was introduced in [Jayaram et al., NeurIPS 2019](https://papers.nips.cc/paper/9527-rand-nsg-fast-accurate-billion-point-nearest-neighbor-search-on-a-single-node.pdf#:~:text=This%20makes%20them%20expensive%20and,query%20latency%20and%20high%20density) as a [disk-based ANN solution](https://github.com/microsoft/DiskANN#:~:text=DiskANN%20is%20a%20suite%20of,time). This crate’s design follows the DiskANN methodology, adapted for Rust with support for modern Rust features (parallelism, memory mapping, etc.)
