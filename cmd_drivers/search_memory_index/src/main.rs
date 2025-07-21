@@ -94,7 +94,7 @@ where
     );
     let mut index = index::create_inmem_index::<T>(index_config)?;
 
-    index.load(index_path, index_num_points)?;
+    index.load_with_enhance(index_path, index_num_points)?;
 
     println!("Using {} threads to search", num_threads);
     let qps_title = if show_qps_per_thread {

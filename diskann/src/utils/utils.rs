@@ -78,6 +78,7 @@ convert_types!(convert_types_usize_u32, usize, u32);
 convert_types!(convert_types_usize_u64, usize, u64);
 convert_types!(convert_types_u64_usize, u64, usize);
 convert_types!(convert_types_u32_usize, u32, usize);
+convert_types!(convert_types_u64_u32, u64, u32);
 
 #[cfg(test)]
 mod file_util_test {

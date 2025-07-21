@@ -64,7 +64,7 @@ where
 
     let timer = Timer::new();
     
-    index.load(data_path, data_num)?;
+    index.load_with_enhance(data_path, data_num)?;
    
     let diff = timer.elapsed();
 

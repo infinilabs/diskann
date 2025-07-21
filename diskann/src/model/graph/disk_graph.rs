@@ -80,6 +80,7 @@ impl<'a> DiskGraph {
         disk_scratch_dataset: &'a mut DiskScratchDataset<T, N>
     ) -> ANNResult<Vertex<'a, T, N>> 
     where
+        T: Copy,
         [T; N]: FullPrecisionDistance<T, N>,
     {
         if self.dim > N {

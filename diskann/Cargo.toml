@@ -8,7 +8,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["default_feature"]
+default = ["default_feature", "disk_store"]
 
 # optional features
 default_feature = []  # no any dependency
@@ -31,10 +31,10 @@ rand = { version = "0.8.5", features = [ "small_rng" ] }
 rayon = "1.7.0"
 serde = { version = "1.0.130", features = ["derive"] }
 thiserror = "1.0.40"
-#winapi = { version = "0.3.9", features = ["errhandlingapi", "fileapi", "ioapiset", "handleapi", "winnt", "minwindef", "basetsd", "winerror", "winbase"] }
+winapi = { version = "0.3.9", features = ["errhandlingapi", "fileapi", "ioapiset", "handleapi", "winnt", "minwindef", "basetsd", "winerror", "winbase"] }
 
 logger = { path = "../logger" }
-#platform = { path = "../platform" }
+platform = { path = "../platform" }
 vector = { path = "../vector" }
 
 cfg-if = "1.0.1"

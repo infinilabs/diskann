@@ -66,7 +66,7 @@ fn build_test_index(index: &mut InmemIndex<f32, DIM_128>, filename: &str, num_po
         );
     }
 
-    index.dataset.build_from_file(filename, num_points_to_load).unwrap();
+    index.dataset.build_from_file_with_enhance(filename, num_points_to_load).unwrap();
 
     println!("Using only first {} from file.", num_points_to_load);
 

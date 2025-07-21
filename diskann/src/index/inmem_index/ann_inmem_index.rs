@@ -27,7 +27,7 @@ where T : Default + Copy + Sync + Send + Into<f32>
     fn save(&mut self, filename: &str) -> ANNResult<()>;
 
     /// Load index
-    fn load(&mut self, filename: &str, expected_num_points: usize) -> ANNResult<()>;
+    fn load_with_enhance(&mut self, filename: &str, expected_num_points: usize) -> ANNResult<()>;
 
     /// insert index
     fn insert(&mut self, filename: &str, num_points_to_insert: usize) -> ANNResult<()>;

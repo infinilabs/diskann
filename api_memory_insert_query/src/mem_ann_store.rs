@@ -119,7 +119,7 @@ where
     }
 
     pub fn load_from_file(&mut self, save_path: &str) -> ANNResult<()> {
-        self.index.load(save_path, 0)
+        self.index.load_with_enhance(save_path, 0)
     }
 
     pub fn query(

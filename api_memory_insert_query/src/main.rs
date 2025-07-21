@@ -10,6 +10,7 @@ use std::{
     io::{BufReader, Write},
 };
 
+use api_memory_insert_query::mem_ann_store::MemANNStore;
 use diskann::{
     common::{ANNError, ANNResult},
     index::{ANNInmemIndex, create_inmem_index},
@@ -23,8 +24,6 @@ use diskann::{
 
 use serde::{Deserialize, Serialize};
 use vector::{FullPrecisionDistance, Metric};
-
-use crate::diskann_store::DiskANNStore;
 
 // The main function to build an in-memory index
 #[allow(clippy::too_many_arguments)]
@@ -194,7 +193,7 @@ struct Embeddings {
 
 fn main() -> ANNResult<()> {
     println!("{:?}", std::env::current_dir().unwrap());
-    
+
     let json_file = File::open(VECTOR_FILE)?;
     let json_reader = BufReader::new(json_file);
     let items: Vec<Embeddings> = serde_json::from_reader(json_reader).unwrap();
@@ -290,8 +289,16 @@ fn main() -> ANNResult<()> {
     )?;
     */
 
-    let mut store: DiskANNStore<f32> =
-        DiskANNStore::new(metric, 512, max_degree, search_list_size, alpha, num_threads).unwrap();
+    let mut store: MemANNStore<f32> = MemANNStore::new(
+        metric,
+        512,
+        max_degree,
+        search_list_size,
+        alpha,
+        num_threads,
+        16,
+    )
+    .unwrap();
     //store.init_data(&insert_points).unwrap();
     store.insert_data(&insert_points).unwrap();
 
@@ -323,7 +330,6 @@ fn main() -> ANNResult<()> {
             for l_value in k_value + 50..k_value + 51 {
                 let mut indices = vec![0; k_value];
                 let mut distances = vec![0f32; k_value];
-                store.save_to_file(save_path)
                 let a = store.query(
                     &insert_points[i],
                     k_value,

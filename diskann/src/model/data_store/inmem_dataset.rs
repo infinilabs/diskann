@@ -63,7 +63,7 @@ where
     }
 
     /// Build the dataset from file
-    pub fn build_from_file(&mut self, filename: &str, num_points_to_load: usize) -> ANNResult<()> {
+    pub fn build_from_file_with_enhance(&mut self, filename: &str, num_points_to_load: usize) -> ANNResult<()> {
         println!(
             "Loading {} vectors from file {} into dataset...",
             num_points_to_load, filename
@@ -81,6 +81,20 @@ where
         if npts != num_points_to_load {
             self.num_active_pts = npts;
         }
+
+        println!("Dataset loaded.");
+        Ok(())
+    }
+
+    /// Build the dataset from file
+    pub fn build_from_file(&mut self, filename: &str, num_points_to_load: usize) -> ANNResult<()> {
+        println!(
+            "Loading {} vectors from file {} into dataset...",
+            num_points_to_load, filename
+        );
+        self.num_active_pts = num_points_to_load;
+
+        copy_aligned_data_from_file(filename, self.into_dto(), 0)?;
 
         println!("Dataset loaded.");
         Ok(())

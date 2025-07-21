@@ -857,12 +857,12 @@ where
         Ok(())
     }
 
-    fn load(&mut self, filename: &str, expected_num_points: usize) -> ANNResult<()> {
+    fn load_with_enhance(&mut self, filename: &str, expected_num_points: usize) -> ANNResult<()> {
         // self.num_active_pts = expected_num_points;
 
         let num_active_pts_saved = self.dataset.num_active_pts;
         self.dataset
-            .build_from_file(&format!("{}.data", filename), expected_num_points)?;
+            .build_from_file_with_enhance(&format!("{}.data", filename), expected_num_points)?;
 
         let diff = self.dataset.num_active_pts - num_active_pts_saved;
         self.num_active_pts = self.dataset.num_active_pts;

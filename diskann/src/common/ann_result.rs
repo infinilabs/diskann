@@ -73,6 +73,13 @@ pub enum ANNError {
         #[from]
         err: TryFromSliceError,
     },
+
+    #[error("Error file size not match: {message}, {actual_size} != {expected_actual_file_size}")]
+    FileSizeMismatch {
+        message: String,
+        actual_size: usize,
+        expected_actual_file_size: usize,
+    },
 }
 
 impl ANNError {
