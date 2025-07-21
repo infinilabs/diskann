@@ -14,6 +14,7 @@ use std::mem;
 use vector::{FullPrecisionDistance, Metric};
 
 use crate::common::{ANNError, ANNResult, AlignedBoxWithSlice};
+use crate::index::INIT_WARMUP_DATA_LEN;
 use crate::model::Vertex;
 use crate::utils::{
     copy_aligned_data_from_file, copy_aligned_data_from_reader, copy_aligned_data_from_vector,
@@ -174,7 +175,7 @@ where
         self.num_points += num_points_to_append;
 
         println!("Dataset appended.");
-        Ok((pts_offset, num_points_to_append))
+        Ok((pts_offset - INIT_WARMUP_DATA_LEN as usize, num_points_to_append))
     }
 
     /// Get vertex by id
