@@ -7,10 +7,10 @@
 //! File operations
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-use std::{mem, io};
 use std::fs::{self, File, OpenOptions};
-use std::io::{Read, BufReader, Write, Seek, SeekFrom};
+use std::io::{BufReader, Read, Seek, SeekFrom, Write};
 use std::path::Path;
+use std::{io, mem};
 
 use crate::model::data_store::DatasetDto;
 
@@ -27,18 +27,18 @@ pub fn load_metadata_from_file(file_name: &str) -> std::io::Result<(usize, usize
 
 /// Read the deleted vertex ids from file.
 pub fn load_ids_to_delete_from_file(file_name: &str) -> std::io::Result<(usize, Vec<u32>)> {
-    // The first 4 bytes are the number of vector ids. 
-    // The rest of the file are the vector ids in the format of usize. 
+    // The first 4 bytes are the number of vector ids.
+    // The rest of the file are the vector ids in the format of usize.
     // The vector ids are sorted in ascending order.
     let mut file = File::open(file_name)?;
     let num_ids = file.read_u32::<LittleEndian>()? as usize;
-    
+
     let mut ids = Vec::with_capacity(num_ids);
     for _ in 0..num_ids {
         let id = file.read_u32::<LittleEndian>()?;
         ids.push(id);
     }
-       
+
     Ok((num_ids, ids))
 }
 
@@ -50,7 +50,7 @@ pub fn load_ids_to_delete_from_file(file_name: &str) -> std::io::Result<(usize, 
 /// * `npts` - number of points read from bin_file
 /// * `dim` - point dimension read from bin_file
 /// * `rounded_dim` - rounded dimension (padding zero if it's > dim)
-/// # Return 
+/// # Return
 /// * `npts` - number of points read from bin_file
 /// * `dim` - point dimension read from bin_file
 pub fn copy_aligned_data_from_file<T: Default + Copy>(
@@ -70,7 +70,7 @@ pub fn copy_aligned_data_from_file<T: Default + Copy>(
 /// * `npts` - number of points read from bin_file
 /// * `dim` - point dimension read from bin_file
 /// * `rounded_dim` - rounded dimension (padding zero if it's > dim)
-/// # Return 
+/// # Return
 /// * `npts` - number of points read from bin_file
 /// * `dim` - point dimension read from bin_file
 pub fn copy_aligned_data_from_reader<T: Default + Copy>(
@@ -84,14 +84,15 @@ pub fn copy_aligned_data_from_reader<T: Default + Copy>(
     let offset = pts_offset * rounded_dim;
 
     for i in 0..npts {
-        let data_slice = &mut dataset_dto.data[offset + i * rounded_dim..offset + i * rounded_dim + dim];
+        let data_slice =
+            &mut dataset_dto.data[offset + i * rounded_dim..offset + i * rounded_dim + dim];
         let mut buf = vec![0u8; dim * mem::size_of::<T>()];
         reader.read_exact(&mut buf)?;
-        
+
         let ptr = buf.as_ptr() as *const T;
         let temp_slice = unsafe { std::slice::from_raw_parts(ptr, dim) };
         data_slice.copy_from_slice(temp_slice);
-        
+
         (i * rounded_dim + dim..i * rounded_dim + rounded_dim).for_each(|j| {
             dataset_dto.data[j] = T::default();
         });
@@ -108,7 +109,7 @@ pub fn copy_aligned_data_from_reader<T: Default + Copy>(
 /// * `npts` - number of points read from bin_file
 /// * `dim` - point dimension read from bin_file
 /// * `rounded_dim` - rounded dimension (padding zero if it's > dim)
-/// # Return 
+/// # Return
 /// * `npts` - number of points read from bin_file
 /// * `dim` - point dimension read from bin_file
 pub fn copy_aligned_data_from_vector<T: Default + Copy>(
@@ -122,9 +123,10 @@ pub fn copy_aligned_data_from_vector<T: Default + Copy>(
     let offset = pts_offset * rounded_dim;
 
     for i in 0..npts {
-        let data_slice = &mut dataset_dto.data[offset + i * rounded_dim..offset + i * rounded_dim + dim];
+        let data_slice =
+            &mut dataset_dto.data[offset + i * rounded_dim..offset + i * rounded_dim + dim];
         data_slice.copy_from_slice(&vector[i]);
-        
+
         (i * rounded_dim + dim..i * rounded_dim + rounded_dim).for_each(|j| {
             dataset_dto.data[j] = T::default();
         });
@@ -170,11 +172,11 @@ pub fn file_exists(filename: &str) -> bool {
 /// * `aligned_dim` - aligned dimension
 /// * `offset` - data offset in file
 pub fn save_data_in_base_dimensions<T: Default + Copy>(
-    filename: &str, 
-    data: &mut [T], 
-    npts: usize, 
+    filename: &str,
+    data: &mut [T],
+    npts: usize,
     ndims: usize,
-    aligned_dim: usize, 
+    aligned_dim: usize,
     offset: usize,
 ) -> std::io::Result<usize> {
     let mut writer = open_file_to_write(filename)?;
@@ -188,7 +190,12 @@ pub fn save_data_in_base_dimensions<T: Default + Copy>(
     let data_ptr = data.as_ptr() as *const u8;
     for i in 0..npts {
         let middle_offset = i * aligned_dim * std::mem::size_of::<T>();
-        let middle_slice = unsafe { std::slice::from_raw_parts(data_ptr.add(middle_offset), ndims * std::mem::size_of::<T>()) };
+        let middle_slice = unsafe {
+            std::slice::from_raw_parts(
+                data_ptr.add(middle_offset),
+                ndims * std::mem::size_of::<T>(),
+            )
+        };
         writer.write_all(middle_slice)?;
     }
     writer.flush()?;
@@ -203,9 +210,9 @@ pub fn save_data_in_base_dimensions<T: Default + Copy>(
 /// * `npts` - number of points
 /// * `ndims` - point dimension
 pub fn load_bin<T: Copy>(
-    bin_file: &str, 
-    file_offset: usize) -> std::io::Result<(Vec<T>, usize, usize)>
-{    
+    bin_file: &str,
+    file_offset: usize,
+) -> std::io::Result<(Vec<T>, usize, usize)> {
     let mut reader = File::open(bin_file)?;
     reader.seek(std::io::SeekFrom::Start(file_offset as u64))?;
     let npts = reader.read_i32::<LittleEndian>()? as usize;
@@ -216,7 +223,7 @@ pub fn load_bin<T: Copy>(
     reader.read_exact(&mut buf)?;
 
     let ptr = buf.as_ptr() as *const T;
-    let data = unsafe { std::slice::from_raw_parts(ptr, npts * dim)};
+    let data = unsafe { std::slice::from_raw_parts(ptr, npts * dim) };
 
     Ok((data.to_vec(), npts, dim))
 }
@@ -231,7 +238,13 @@ pub fn get_file_size(filename: &str) -> io::Result<u64> {
 macro_rules! save_bin {
     ($name:ident, $t:ty, $write_func:ident) => {
         /// Write data into file
-        pub fn $name(filename: &str, data: &[$t], num_pts: usize, dims: usize, offset: usize) -> std::io::Result<usize> {
+        pub fn $name(
+            filename: &str,
+            data: &[$t],
+            num_pts: usize,
+            dims: usize,
+            offset: usize,
+        ) -> std::io::Result<usize> {
             let mut writer = open_file_to_write(filename)?;
 
             println!("Writing bin: {}", filename);
@@ -242,7 +255,10 @@ macro_rules! save_bin {
 
             writer.write_i32::<LittleEndian>(num_pts_i32)?;
             writer.write_i32::<LittleEndian>(dims_i32)?;
-            println!("bin: #pts = {}, #dims = {}, size = {}B", num_pts, dims, bytes_written);
+            println!(
+                "bin: #pts = {}, #dims = {}, size = {}B",
+                num_pts, dims, bytes_written
+            );
 
             for item in data.iter() {
                 writer.$write_func::<LittleEndian>(*item)?;
@@ -262,9 +278,9 @@ save_bin!(save_bin_u32, u32, write_u32);
 
 #[cfg(test)]
 mod file_util_test {
+    use super::*;
     use crate::model::data_store::InmemDataset;
     use std::fs;
-    use super::*;
 
     pub const DIM_8: usize = 8;
 
@@ -277,8 +293,8 @@ mod file_util_test {
             Ok((npoints, ndims)) => {
                 assert!(npoints == 200);
                 assert!(ndims == 128);
-            },
-            Err(_e) => {},
+            }
+            Err(_e) => {}
         }
         fs::remove_file(file_name).expect("Failed to delete file");
     }
@@ -287,11 +303,13 @@ mod file_util_test {
     fn load_data_test() {
         let file_name = "test_load_data_test.bin";
         //npoints=2, dim=8, 2 vectors [1.0;8] [2.0;8]
-        let data: [u8; 72] = [2, 0, 0, 0, 8, 0, 0, 0, 
-            0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x80, 0x40, 
-            0x00, 0x00, 0xa0, 0x40, 0x00, 0x00, 0xc0, 0x40, 0x00, 0x00, 0xe0, 0x40, 0x00, 0x00, 0x00, 0x41, 
-            0x00, 0x00, 0x10, 0x41, 0x00, 0x00, 0x20, 0x41, 0x00, 0x00, 0x30, 0x41, 0x00, 0x00, 0x40, 0x41, 
-            0x00, 0x00, 0x50, 0x41, 0x00, 0x00, 0x60, 0x41, 0x00, 0x00, 0x70, 0x41, 0x00, 0x00, 0x80, 0x41]; 
+        let data: [u8; 72] = [
+            2, 0, 0, 0, 8, 0, 0, 0, 0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
+            0x40, 0x40, 0x00, 0x00, 0x80, 0x40, 0x00, 0x00, 0xa0, 0x40, 0x00, 0x00, 0xc0, 0x40,
+            0x00, 0x00, 0xe0, 0x40, 0x00, 0x00, 0x00, 0x41, 0x00, 0x00, 0x10, 0x41, 0x00, 0x00,
+            0x20, 0x41, 0x00, 0x00, 0x30, 0x41, 0x00, 0x00, 0x40, 0x41, 0x00, 0x00, 0x50, 0x41,
+            0x00, 0x00, 0x60, 0x41, 0x00, 0x00, 0x70, 0x41, 0x00, 0x00, 0x80, 0x41,
+        ];
         std::fs::write(file_name, data).expect("Failed to write sample file");
 
         let mut dataset = InmemDataset::<f32, DIM_8>::new(2, 1f32).unwrap();
@@ -308,11 +326,11 @@ mod file_util_test {
 
                 assert!(*first_vertex.vector() == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]);
                 assert!(*second_vertex.vector() == [9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]);
-            },
+            }
             Err(e) => {
                 fs::remove_file(file_name).expect("Failed to delete file");
                 panic!("{}", e)
-            },
+            }
         }
     }
 
@@ -343,20 +361,25 @@ mod file_util_test {
     #[test]
     fn save_data_in_base_dimensions_test() {
         //npoints=2, dim=8
-        let mut data: [u8; 72] = [2, 0, 0, 0, 8, 0, 0, 0, 
-            0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x80, 0x40, 
-            0x00, 0x00, 0xa0, 0x40, 0x00, 0x00, 0xc0, 0x40, 0x00, 0x00, 0xe0, 0x40, 0x00, 0x00, 0x00, 0x41, 
-            0x00, 0x00, 0x10, 0x41, 0x00, 0x00, 0x20, 0x41, 0x00, 0x00, 0x30, 0x41, 0x00, 0x00, 0x40, 0x41, 
-            0x00, 0x00, 0x50, 0x41, 0x00, 0x00, 0x60, 0x41, 0x00, 0x00, 0x70, 0x41, 0x00, 0x00, 0x80, 0x41]; 
+        let mut data: [u8; 72] = [
+            2, 0, 0, 0, 8, 0, 0, 0, 0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
+            0x40, 0x40, 0x00, 0x00, 0x80, 0x40, 0x00, 0x00, 0xa0, 0x40, 0x00, 0x00, 0xc0, 0x40,
+            0x00, 0x00, 0xe0, 0x40, 0x00, 0x00, 0x00, 0x41, 0x00, 0x00, 0x10, 0x41, 0x00, 0x00,
+            0x20, 0x41, 0x00, 0x00, 0x30, 0x41, 0x00, 0x00, 0x40, 0x41, 0x00, 0x00, 0x50, 0x41,
+            0x00, 0x00, 0x60, 0x41, 0x00, 0x00, 0x70, 0x41, 0x00, 0x00, 0x80, 0x41,
+        ];
         let num_points = 2;
         let dim = DIM_8;
         let data_file = "save_data_in_base_dimensions_test.data";
         match save_data_in_base_dimensions(data_file, &mut data, num_points, dim, DIM_8, 0) {
             Ok(num) => {
                 assert!(file_exists(data_file));
-                assert_eq!(num, 2 * std::mem::size_of::<u32>() + num_points * dim * std::mem::size_of::<u8>());
+                assert_eq!(
+                    num,
+                    2 * std::mem::size_of::<u32>() + num_points * dim * std::mem::size_of::<u8>()
+                );
                 fs::remove_file(data_file).expect("Failed to delete file");
-            },
+            }
             Err(e) => {
                 fs::remove_file(data_file).expect("Failed to delete file");
                 panic!("{}", e)
@@ -410,7 +433,7 @@ mod file_util_test {
 
     #[test]
     fn load_bin_offset_test() {
-        let offset:usize = 32;
+        let offset: usize = 32;
         let file_name = "load_bin_offset_test";
         let data = vec![0u64, 1u64, 2u64];
         let num_pts = data.len();
@@ -425,4 +448,3 @@ mod file_util_test {
         std::fs::remove_file(file_name).unwrap();
     }
 }
-

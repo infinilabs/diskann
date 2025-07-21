@@ -9,7 +9,7 @@
 use std::mem::{size_of, size_of_val};
 use std::ptr;
 
-use crate::common::{AlignedBoxWithSlice, ANNResult};
+use crate::common::{ANNResult, AlignedBoxWithSlice};
 use crate::model::MAX_N_CMPS;
 use crate::utils::round_up;
 
@@ -18,25 +18,26 @@ pub const DISK_SCRATCH_DATASET_ALIGN: usize = 256;
 
 /// Disk scratch dataset storing fp vectors with aligned dim
 #[derive(Debug)]
-pub struct DiskScratchDataset<T, const N: usize>
-{
+pub struct DiskScratchDataset<T, const N: usize> {
     /// fp vectors with aligned dim
-    pub data: AlignedBoxWithSlice<T>, 
+    pub data: AlignedBoxWithSlice<T>,
 
     /// current index to store the next fp vector
     pub cur_index: usize,
 }
 
 impl<T, const N: usize> DiskScratchDataset<T, N>
-where T: Copy
+where
+    T: Copy,
 {
     /// Create DiskScratchDataset instance
     pub fn new() -> ANNResult<Self> {
         Ok(Self {
             // C++ code allocates round_up(MAX_N_CMPS * N, 256) bytes, shouldn't it be round_up(MAX_N_CMPS * N, 256) * size_of::<T> bytes?
             data: AlignedBoxWithSlice::new(
-                round_up(MAX_N_CMPS * N, DISK_SCRATCH_DATASET_ALIGN), 
-                DISK_SCRATCH_DATASET_ALIGN)?,
+                round_up(MAX_N_CMPS * N, DISK_SCRATCH_DATASET_ALIGN),
+                DISK_SCRATCH_DATASET_ALIGN,
+            )?,
             cur_index: 0,
         })
     }
@@ -48,7 +49,7 @@ where T: Copy
     /// Behavior is undefined if any of the following conditions are violated:
     ///
     /// * `fp_vector_buf`'s len must be `dim * size_of::<T>()` bytes
-    /// 
+    ///
     /// * `fp_vector_buf` must be smaller than or equal to `N * size_of::<T>()` bytes.
     ///
     /// * `fp_vector_buf` and `self.data` must be nonoverlapping.

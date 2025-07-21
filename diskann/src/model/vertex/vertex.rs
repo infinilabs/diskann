@@ -29,10 +29,7 @@ where
 {
     /// Create the vertex with data
     pub fn new(val: &'a [T; N], id: u32) -> Self {
-        Self {
-            val,
-            id,
-        }
+        Self { val, id }
     }
 
     /// Compare the vertex with another.
@@ -65,4 +62,3 @@ where
         Ok(Vertex::new(array, id))
     }
 }
-

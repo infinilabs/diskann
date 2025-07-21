@@ -15,7 +15,7 @@ fn main() {
             .compile("nativefunctions.lib");
     } else if cfg!(target_os = "macos") {
         std::env::set_var("CFLAGS", "-mavx2 -mfma -Wno-error -MP -O2 -D NDEBUG -D MKL_ILP64 -D USE_AVX2 -D USE_ACCELERATED_PQ -D NOMINMAX -D _TARGET_ARM_APPLE_DARWIN");
-        
+
         cc::Build::new()
             .file("distance.c")
             .warnings_into_errors(true)
@@ -35,4 +35,3 @@ fn main() {
         println!("cargo:rustc-link-arg=nativefunctions.lib");
     }
 }
-

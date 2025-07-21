@@ -90,10 +90,10 @@ pub fn distance_cosine_vector_f32<const N: usize>(a: &[f32; N], b: &[f32; N]) ->
         for i in (0..N).step_by(8) {
             let a_vec = _mm256_load_ps(&a[i]);
             let b_vec = _mm256_load_ps(&b[i]);
-            
+
             // calculate point product
             dot = _mm256_fmadd_ps(a_vec, b_vec, dot);
-            
+
             // Compute squared norm
             norm_a = _mm256_fmadd_ps(a_vec, a_vec, norm_a);
             norm_b = _mm256_fmadd_ps(b_vec, b_vec, norm_b);
@@ -118,4 +118,3 @@ unsafe fn hsum256_ps(v: __m256) -> f32 {
     let x32 = _mm_add_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
     _mm_cvtss_f32(x32)
 }
-

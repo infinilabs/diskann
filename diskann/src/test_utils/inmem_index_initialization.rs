@@ -6,8 +6,8 @@ use vector::Metric;
 
 use crate::index::InmemIndex;
 use crate::model::configuration::index_write_parameters::IndexWriteParametersBuilder;
-use crate::model::{IndexConfiguration};
 use crate::model::vertex::DIM_128;
+use crate::model::IndexConfiguration;
 use crate::utils::{file_exists, load_metadata_from_file};
 
 use super::get_test_file_path;
@@ -17,28 +17,39 @@ const TEST_DATA_FILE: &str = "tests/data/siftsmall_learn_256pts.fbin";
 const NUM_POINTS_TO_LOAD: usize = 256;
 
 pub fn create_index_with_test_data() -> InmemIndex<f32, DIM_128> {
-    let index_write_parameters = IndexWriteParametersBuilder::new(50, 4).with_alpha(1.2).build();
+    let index_write_parameters = IndexWriteParametersBuilder::new(50, 4)
+        .with_alpha(1.2)
+        .build();
     let config = IndexConfiguration::new(
-        Metric::L2, 
-        128, 
+        Metric::L2,
         128,
-        256, 
-        false, 
-        0, 
+        128,
+        256,
         false,
-        0, 
+        0,
+        false,
+        0,
         1.0f32,
-        index_write_parameters);
+        index_write_parameters,
+    );
     let mut index: InmemIndex<f32, DIM_128> = InmemIndex::new(config).unwrap();
 
-    build_test_index(&mut index, get_test_file_path(TEST_DATA_FILE).as_str(), NUM_POINTS_TO_LOAD);
+    build_test_index(
+        &mut index,
+        get_test_file_path(TEST_DATA_FILE).as_str(),
+        NUM_POINTS_TO_LOAD,
+    );
 
     index.start = index.dataset.calculate_medoid_point_id().unwrap();
 
     index
 }
 
-fn build_test_index(index: &mut InmemIndex<f32, DIM_128>, filename: &str, num_points_to_load: usize) {
+fn build_test_index(
+    index: &mut InmemIndex<f32, DIM_128>,
+    filename: &str,
+    num_points_to_load: usize,
+) {
     if !file_exists(filename) {
         panic!("ERROR: Data file {} does not exist.", filename);
     }
@@ -66,7 +77,10 @@ fn build_test_index(index: &mut InmemIndex<f32, DIM_128>, filename: &str, num_po
         );
     }
 
-    index.dataset.build_from_file_with_enhance(filename, num_points_to_load).unwrap();
+    index
+        .dataset
+        .build_from_file_with_enhance(filename, num_points_to_load)
+        .unwrap();
 
     println!("Using only first {} from file.", num_points_to_load);
 

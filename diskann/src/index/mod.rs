@@ -11,4 +11,3 @@ mod disk_index;
 
 #[cfg(feature = "disk_store")]
 pub use disk_index::*;
-

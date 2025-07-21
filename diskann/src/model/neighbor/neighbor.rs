@@ -19,18 +19,22 @@ pub struct Neighbor {
 
 impl Neighbor {
     /// Create the neighbor node and it has not been visited
-    pub fn new (id: u32, distance: f32) -> Self {
-        Self { 
+    pub fn new(id: u32, distance: f32) -> Self {
+        Self {
             id,
             distance,
-            visited: false
+            visited: false,
         }
     }
 }
 
 impl Default for Neighbor {
     fn default() -> Self {
-        Self { id: 0, distance: 0.0_f32, visited: false }
+        Self {
+            id: 0,
+            distance: 0.0_f32,
+            visited: false,
+        }
     }
 }
 
@@ -45,7 +49,10 @@ impl Eq for Neighbor {}
 
 impl Ord for Neighbor {
     fn cmp(&self, other: &Self) -> Ordering {
-        let ord = self.distance.partial_cmp(&other.distance).unwrap_or(std::cmp::Ordering::Equal);
+        let ord = self
+            .distance
+            .partial_cmp(&other.distance)
+            .unwrap_or(std::cmp::Ordering::Equal);
 
         if ord == Ordering::Equal {
             return self.id.cmp(&other.id);
@@ -101,4 +108,3 @@ mod neighbor_test {
         assert!(n1 <= n2);
     }
 }
-

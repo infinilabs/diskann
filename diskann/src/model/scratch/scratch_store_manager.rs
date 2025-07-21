@@ -4,8 +4,8 @@
  */
 use crate::common::ANNResult;
 
+use super::scratch_traits::Scratch;
 use super::ArcConcurrentBoxedQueue;
-use super::{scratch_traits::Scratch};
 use std::time::Duration;
 
 pub struct ScratchStoreManager<T: Scratch> {
@@ -62,9 +62,11 @@ mod tests {
 
         let scratch_pool = ArcConcurrentBoxedQueue::new();
         for i in 1..3 {
-            scratch_pool.push(Box::new(MyScratch {
-                data: vec![i, 2 * i, 3 * i],
-            })).unwrap();
+            scratch_pool
+                .push(Box::new(MyScratch {
+                    data: vec![i, 2 * i, 3 * i],
+                }))
+                .unwrap();
         }
 
         let mut manager = ScratchStoreManager::new(scratch_pool.clone(), wait_time).unwrap();
@@ -81,4 +83,3 @@ mod tests {
         assert_eq!(current_scratch.data, vec![2, 4, 6]);
     }
 }
-

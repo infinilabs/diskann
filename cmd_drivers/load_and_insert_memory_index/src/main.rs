@@ -5,22 +5,21 @@
 use std::env;
 
 use diskann::{
-    common::{ANNResult, ANNError},
+    common::{ANNError, ANNResult},
     index::create_inmem_index,
-    utils::round_up,
     model::{
-        IndexWriteParametersBuilder,
-        IndexConfiguration,
-        vertex::{DIM_128, DIM_256, DIM_104, DIM_512}
+        vertex::{DIM_104, DIM_128, DIM_256, DIM_512},
+        IndexConfiguration, IndexWriteParametersBuilder,
     },
-    utils::{Timer, load_metadata_from_file},
+    utils::round_up,
+    utils::{load_metadata_from_file, Timer},
 };
 
-use vector::{Metric, FullPrecisionDistance, Half};
+use vector::{FullPrecisionDistance, Half, Metric};
 
 // The main function to build an in-memory index
 #[allow(clippy::too_many_arguments)]
-fn load_and_insert_in_memory_index<T> (
+fn load_and_insert_in_memory_index<T>(
     metric: Metric,
     data_path: &str,
     delta_path: &str,
@@ -31,14 +30,14 @@ fn load_and_insert_in_memory_index<T> (
     num_threads: u32,
     _use_pq_build: bool,
     _num_pq_bytes: usize,
-    use_opq: bool
-) -> ANNResult<()> 
-where 
+    use_opq: bool,
+) -> ANNResult<()>
+where
     T: Default + Copy + Sync + Send + Into<f32>,
     [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
     [T; DIM_128]: FullPrecisionDistance<T, DIM_128>,
     [T; DIM_256]: FullPrecisionDistance<T, DIM_256>,
-    [T; DIM_512]: FullPrecisionDistance<T, DIM_512>
+    [T; DIM_512]: FullPrecisionDistance<T, DIM_512>,
 {
     let index_write_parameters = IndexWriteParametersBuilder::new(l, r)
         .with_alpha(alpha)
@@ -63,19 +62,19 @@ where
     let mut index = create_inmem_index::<T>(config)?;
 
     let timer = Timer::new();
-    
+
     index.load_with_enhance(data_path, data_num)?;
-   
+
     let diff = timer.elapsed();
 
     println!("Initial indexing time: {}", diff.as_secs_f64());
 
     let (delta_data_num, _) = load_metadata_from_file(delta_path)?;
-    
+
     index.insert(delta_path, delta_data_num)?;
 
     index.save(save_path)?;
-    
+
     Ok(())
 }
 
@@ -105,101 +104,167 @@ fn main() -> ANNResult<()> {
                 return Ok(());
             }
             "--data_type" => {
-                data_type = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "data_type".to_string(), 
-                        "Missing data type".to_string())
-                    )?
+                data_type = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "data_type".to_string(),
+                            "Missing data type".to_string(),
+                        )
+                    })?
                     .to_owned();
             }
             "--dist_fn" => {
-                dist_fn = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "dist_fn".to_string(), 
-                        "Missing distance function".to_string())
-                    )?
+                dist_fn = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "dist_fn".to_string(),
+                            "Missing distance function".to_string(),
+                        )
+                    })?
                     .to_owned();
             }
             "--data_path" => {
-                data_path = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "data_path".to_string(), 
-                        "Missing data path".to_string())
-                    )?
+                data_path = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "data_path".to_string(),
+                            "Missing data path".to_string(),
+                        )
+                    })?
                     .to_owned();
             }
             "--insert_path" => {
-                insert_path = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "insert_path".to_string(), 
-                        "Missing insert path".to_string())
-                    )?
+                insert_path = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "insert_path".to_string(),
+                            "Missing insert path".to_string(),
+                        )
+                    })?
                     .to_owned();
             }
             "--index_path_prefix" => {
-                index_path_prefix = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "index_path_prefix".to_string(), 
-                        "Missing index path prefix".to_string()))?
+                index_path_prefix = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "index_path_prefix".to_string(),
+                            "Missing index path prefix".to_string(),
+                        )
+                    })?
                     .to_owned();
             }
             "--max_degree" | "-R" => {
-                r = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "max_degree".to_string(), 
-                        "Missing max degree".to_string()))?
+                r = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "max_degree".to_string(),
+                            "Missing max degree".to_string(),
+                        )
+                    })?
                     .parse()
-                    .map_err(|err| ANNError::log_index_config_error(
-                        "max_degree".to_string(), 
-                        format!("ParseIntError: {}", err))
-                    )?;
+                    .map_err(|err| {
+                        ANNError::log_index_config_error(
+                            "max_degree".to_string(),
+                            format!("ParseIntError: {}", err),
+                        )
+                    })?;
             }
             "--Lbuild" | "-L" => {
-                l = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "Lbuild".to_string(), 
-                        "Missing build complexity".to_string()))?
+                l = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "Lbuild".to_string(),
+                            "Missing build complexity".to_string(),
+                        )
+                    })?
                     .parse()
-                    .map_err(|err| ANNError::log_index_config_error(
-                        "Lbuild".to_string(), 
-                        format!("ParseIntError: {}", err))
-                    )?;
+                    .map_err(|err| {
+                        ANNError::log_index_config_error(
+                            "Lbuild".to_string(),
+                            format!("ParseIntError: {}", err),
+                        )
+                    })?;
             }
             "--alpha" => {
-                alpha = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "alpha".to_string(), 
-                        "Missing alpha".to_string()))?
+                alpha = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "alpha".to_string(),
+                            "Missing alpha".to_string(),
+                        )
+                    })?
                     .parse()
-                    .map_err(|err| ANNError::log_index_config_error(
-                        "alpha".to_string(), 
-                        format!("ParseFloatError: {}", err))
-                    )?;
+                    .map_err(|err| {
+                        ANNError::log_index_config_error(
+                            "alpha".to_string(),
+                            format!("ParseFloatError: {}", err),
+                        )
+                    })?;
             }
             "--num_threads" | "-T" => {
-                num_threads = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "num_threads".to_string(), 
-                        "Missing number of threads".to_string()))?
+                num_threads = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "num_threads".to_string(),
+                            "Missing number of threads".to_string(),
+                        )
+                    })?
                     .parse()
-                    .map_err(|err| ANNError::log_index_config_error(
-                        "num_threads".to_string(), 
-                        format!("ParseIntError: {}", err))
-                    )?;
+                    .map_err(|err| {
+                        ANNError::log_index_config_error(
+                            "num_threads".to_string(),
+                            format!("ParseIntError: {}", err),
+                        )
+                    })?;
             }
             "--build_PQ_bytes" => {
-                build_pq_bytes = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "build_PQ_bytes".to_string(), 
-                        "Missing PQ bytes".to_string()))?
+                build_pq_bytes = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "build_PQ_bytes".to_string(),
+                            "Missing PQ bytes".to_string(),
+                        )
+                    })?
                     .parse()
-                    .map_err(|err| ANNError::log_index_config_error(
-                        "build_PQ_bytes".to_string(), 
-                        format!("ParseIntError: {}", err))
-                    )?;
+                    .map_err(|err| {
+                        ANNError::log_index_config_error(
+                            "build_PQ_bytes".to_string(),
+                            format!("ParseIntError: {}", err),
+                        )
+                    })?;
             }
             "--use_opq" => {
-                use_opq = iter.next().ok_or_else(|| ANNError::log_index_config_error(
-                        "use_opq".to_string(), 
-                        "Missing use_opq flag".to_string()))?
+                use_opq = iter
+                    .next()
+                    .ok_or_else(|| {
+                        ANNError::log_index_config_error(
+                            "use_opq".to_string(),
+                            "Missing use_opq flag".to_string(),
+                        )
+                    })?
                     .parse()
-                    .map_err(|err| ANNError::log_index_config_error(
-                        "use_opq".to_string(), 
-                        format!("ParseBoolError: {}", err))
-                    )?;
+                    .map_err(|err| {
+                        ANNError::log_index_config_error(
+                            "use_opq".to_string(),
+                            format!("ParseBoolError: {}", err),
+                        )
+                    })?;
             }
             _ => {
-                return Err(ANNError::log_index_config_error(String::from(""), format!("Unknown argument: {}", arg)));
+                return Err(ANNError::log_index_config_error(
+                    String::from(""),
+                    format!("Unknown argument: {}", arg),
+                ));
             }
         }
     }
@@ -209,17 +274,17 @@ fn main() -> ANNResult<()> {
         || data_path.is_empty()
         || index_path_prefix.is_empty()
     {
-        return Err(ANNError::log_index_config_error(String::from(""), "Missing required arguments".to_string()));
+        return Err(ANNError::log_index_config_error(
+            String::from(""),
+            "Missing required arguments".to_string(),
+        ));
     }
 
     _use_pq_build = build_pq_bytes > 0;
 
     let metric = dist_fn
         .parse::<Metric>()
-        .map_err(|err| ANNError::log_index_config_error(
-            "dist_fn".to_string(), 
-            err.to_string(),
-        ))?;
+        .map_err(|err| ANNError::log_index_config_error("dist_fn".to_string(), err.to_string()))?;
 
     println!(
         "Starting index build with R: {}  Lbuild: {}  alpha: {}  #threads: {}",
@@ -272,24 +337,25 @@ fn main() -> ANNResult<()> {
                 use_opq,
             )?;
         }
-        "f16" => {
-            load_and_insert_in_memory_index::<Half>(
-                metric,
-                &data_path,
-                &insert_path,
-                r,
-                l,
-                alpha,
-                &index_path_prefix,
-                num_threads,
-                _use_pq_build,
-                build_pq_bytes as usize,
-                use_opq,
-            )?
-        }
+        "f16" => load_and_insert_in_memory_index::<Half>(
+            metric,
+            &data_path,
+            &insert_path,
+            r,
+            l,
+            alpha,
+            &index_path_prefix,
+            num_threads,
+            _use_pq_build,
+            build_pq_bytes as usize,
+            use_opq,
+        )?,
         _ => {
             println!("Unsupported type. Use one of int8, uint8 or float.");
-            return Err(ANNError::log_index_config_error("data_type".to_string(), "Invalid data type".to_string()));
+            return Err(ANNError::log_index_config_error(
+                "data_type".to_string(),
+                "Invalid data type".to_string(),
+            ));
         }
     }
 
@@ -301,7 +367,9 @@ fn print_help() {
     println!("--help, -h                Print information on arguments");
     println!("--data_type               data type <int8/uint8/float> (required)");
     println!("--dist_fn                 distance function <l2/cosine> (required)");
-    println!("--data_path               Input data file in bin format for initial build (required)");
+    println!(
+        "--data_path               Input data file in bin format for initial build (required)"
+    );
     println!("--insert_path             Input data file in bin format for insert (required)");
     println!("--index_path_prefix       Path prefix for saving index file components (required)");
     println!("--max_degree, -R          Maximum graph degree (default: 64)");
@@ -311,4 +379,3 @@ fn print_help() {
     println!("--build_PQ_bytes          Number of PQ bytes to build the index; 0 for full precision build (default: 0)");
     println!("--use_opq                 Set true for OPQ compression while using PQ distance comparisons for building the index, and false for PQ compression (default: false)");
 }
-

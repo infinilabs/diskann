@@ -109,4 +109,3 @@ mod dataset_test {
         index.build("fake_file", 100).unwrap();
     }
 }
-

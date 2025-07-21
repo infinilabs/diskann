@@ -23,7 +23,7 @@ if #[cfg(target_os = "windows")] {
 } else {
     pub mod perf_linux;
     pub use perf_linux::*;
-    
+
     pub mod timer_linux;
     pub use timer_linux::*;
 }

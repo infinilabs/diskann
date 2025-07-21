@@ -10,15 +10,14 @@ use hashbrown::HashSet;
 
 use crate::{
     common::{ANNResult, AlignedBoxWithSlice},
-    model::{Neighbor, NeighborPriorityQueue},
     model::data_store::DiskScratchDataset,
+    model::{Neighbor, NeighborPriorityQueue},
 };
 
 use super::{PQScratch, Scratch, MAX_GRAPH_DEGREE, QUERY_ALIGNMENT_OF_T_SIZE};
 
 // Scratch space for disk index based search.
-pub struct SSDQueryScratch<T: Default + Copy, const N: usize> 
-{
+pub struct SSDQueryScratch<T: Default + Copy, const N: usize> {
     // Disk scratch dataset storing fp vectors with aligned dim (N)
     pub scratch_dataset: DiskScratchDataset<T, N>,
 
@@ -39,8 +38,7 @@ pub struct SSDQueryScratch<T: Default + Copy, const N: usize>
 }
 
 //
-impl<T: Copy + Default, const N: usize> SSDQueryScratch<T, N> 
-{
+impl<T: Copy + Default, const N: usize> SSDQueryScratch<T, N> {
     pub fn new(
         visited_reserve: usize,
         candidate_queue_size: usize,
@@ -48,7 +46,8 @@ impl<T: Copy + Default, const N: usize> SSDQueryScratch<T, N>
     ) -> ANNResult<Self> {
         let scratch_dataset = DiskScratchDataset::<T, N>::new()?;
 
-        let query = AlignedBoxWithSlice::<T>::new(N, mem::size_of::<T>() * QUERY_ALIGNMENT_OF_T_SIZE)?;
+        let query =
+            AlignedBoxWithSlice::<T>::new(N, mem::size_of::<T>() * QUERY_ALIGNMENT_OF_T_SIZE)?;
 
         let id_scratch = HashSet::<u32>::with_capacity(visited_reserve);
         let full_return_set = Vec::<Neighbor>::with_capacity(visited_reserve);
@@ -75,8 +74,7 @@ impl<T: Copy + Default, const N: usize> SSDQueryScratch<T, N>
     }
 }
 
-impl<T: Default + Copy, const N: usize> Scratch for SSDQueryScratch<T, N> 
-{
+impl<T: Default + Copy, const N: usize> Scratch for SSDQueryScratch<T, N> {
     fn clear(&mut self) {
         self.id_scratch.clear();
         self.best_candidates.clear();

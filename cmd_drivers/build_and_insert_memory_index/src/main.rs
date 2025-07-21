@@ -5,22 +5,21 @@
 use std::env;
 
 use diskann::{
-    common::{ANNResult, ANNError},
+    common::{ANNError, ANNResult},
     index::create_inmem_index,
-    utils::round_up,
     model::{
-        IndexWriteParametersBuilder,
-        IndexConfiguration, 
-        vertex::{DIM_128, DIM_256, DIM_104, DIM_512}
+        vertex::{DIM_104, DIM_128, DIM_256, DIM_512},
+        IndexConfiguration, IndexWriteParametersBuilder,
     },
+    utils::round_up,
     utils::{load_metadata_from_file, Timer},
 };
 
-use vector::{Metric, FullPrecisionDistance, Half};
+use vector::{FullPrecisionDistance, Half, Metric};
 
 // The main function to build an in-memory index
 #[allow(clippy::too_many_arguments)]
-fn build_and_insert_in_memory_index<T> (
+fn build_and_insert_in_memory_index<T>(
     metric: Metric,
     data_path: &str,
     delta_path: &str,
@@ -31,9 +30,9 @@ fn build_and_insert_in_memory_index<T> (
     num_threads: u32,
     _use_pq_build: bool,
     _num_pq_bytes: usize,
-    use_opq: bool
-) -> ANNResult<()> 
-where 
+    use_opq: bool,
+) -> ANNResult<()>
+where
     T: Default + Copy + Sync + Send + Into<f32>,
     [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
     [T; DIM_128]: FullPrecisionDistance<T, DIM_128>,
@@ -63,19 +62,19 @@ where
     let mut index = create_inmem_index::<T>(config)?;
 
     let timer = Timer::new();
-    
+
     index.build(data_path, data_num)?;
-   
+
     let diff = timer.elapsed();
 
     println!("Initial indexing time: {}", diff.as_secs_f64());
 
     let (delta_data_num, _) = load_metadata_from_file(delta_path)?;
-    
+
     index.insert(delta_path, delta_data_num)?;
 
     index.save(save_path)?;
-    
+
     Ok(())
 }
 
@@ -142,7 +141,7 @@ fn main() -> ANNResult<()> {
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
-                            "insert_path".to_string(), 
+                            "insert_path".to_string(),
                             "Missing insert path".to_string(),
                         )
                     })?
@@ -276,7 +275,7 @@ fn main() -> ANNResult<()> {
         || index_path_prefix.is_empty()
     {
         return Err(ANNError::log_index_config_error(
-            String::from(""), 
+            String::from(""),
             "Missing required arguments".to_string(),
         ));
     }
@@ -285,10 +284,7 @@ fn main() -> ANNResult<()> {
 
     let metric = dist_fn
         .parse::<Metric>()
-        .map_err(|err| ANNError::log_index_config_error(
-            "dist_fn".to_string(), 
-            err.to_string(),
-        ))?;
+        .map_err(|err| ANNError::log_index_config_error("dist_fn".to_string(), err.to_string()))?;
 
     println!(
         "Starting index build with R: {}  Lbuild: {}  alpha: {}  #threads: {}",
@@ -358,7 +354,10 @@ fn main() -> ANNResult<()> {
         }
         _ => {
             println!("Unsupported type. Use one of int8, uint8 or float.");
-            return Err(ANNError::log_index_config_error("data_type".to_string(), "Invalid data type".to_string()));
+            return Err(ANNError::log_index_config_error(
+                "data_type".to_string(),
+                "Invalid data type".to_string(),
+            ));
         }
     }
 
@@ -370,7 +369,9 @@ fn print_help() {
     println!("--help, -h                Print information on arguments");
     println!("--data_type               data type <int8/uint8/float> (required)");
     println!("--dist_fn                 distance function <l2/cosine> (required)");
-    println!("--data_path               Input data file in bin format for initial build (required)");
+    println!(
+        "--data_path               Input data file in bin format for initial build (required)"
+    );
     println!("--insert_path             Input data file in bin format for insert (required)");
     println!("--index_path_prefix       Path prefix for saving index file components (required)");
     println!("--max_degree, -R          Maximum graph degree (default: 64)");
@@ -380,4 +381,3 @@ fn print_help() {
     println!("--build_PQ_bytes          Number of PQ bytes to build the index; 0 for full precision build (default: 0)");
     println!("--use_opq                 Set true for OPQ compression while using PQ distance comparisons for building the index, and false for PQ compression (default: false)");
 }
-
