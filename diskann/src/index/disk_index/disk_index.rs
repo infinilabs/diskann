@@ -6,7 +6,14 @@ use std::io::Read;
 use std::mem;
 
 use std::fs::File;
-use std::os::windows::fs::MetadataExt;
+
+cfg_if! {
+    if #[cfg(target_os = "windows")] {
+        use std::os::windows::fs::MetadataExt;
+    } else {
+        use std::os::linux::fs::MetadataExt;
+    }
+}
 
 use byteorder::{NativeEndian, ReadBytesExt};
 use cfg_if::cfg_if;

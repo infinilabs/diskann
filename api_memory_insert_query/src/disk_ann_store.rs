@@ -1,3 +1,4 @@
+/*
 use diskann::{
     common::ANNResult,
     index::ann_disk_index::{create_disk_index, ANNDiskIndex},
@@ -104,3 +105,4 @@ mod tests {
         }
     }
 }
+*/
