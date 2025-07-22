@@ -14,7 +14,9 @@ use rand::SeedableRng;
 fn benchmark_priority_queue_insert(c: &mut Criterion) {
     let vec = generate_random_floats();
     let mut group = c.benchmark_group("neighborqueue-insert");
-    group.measurement_time(Duration::from_secs(3)).sample_size(500);
+    group
+        .measurement_time(Duration::from_secs(3))
+        .sample_size(500);
 
     let mut queue = NeighborPriorityQueue::with_capacity(64_usize);
     group.bench_function("Neighbor Priority Queue Insert", |f| {
@@ -46,4 +48,3 @@ fn generate_random_floats() -> Vec<Neighbor> {
 
 criterion_group!(benches, benchmark_priority_queue_insert);
 criterion_main!(benches);
-

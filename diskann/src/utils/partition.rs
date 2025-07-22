@@ -2,10 +2,10 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT license.
  */
+use rand::distributions::{Distribution, Uniform};
+use std::io::{Seek, SeekFrom, Write};
 use std::mem;
 use std::{fs::File, path::Path};
-use std::io::{Write, Seek, SeekFrom};
-use rand::distributions::{Distribution, Uniform};
 
 use crate::common::ANNResult;
 
@@ -20,7 +20,10 @@ use super::CachedReader;
 /// * `sampled_vectors` - sampled vector chose by p_val possibility
 /// * `slice_size` - how many sampled data return
 /// * `dim` - each sample data dimension
-pub fn gen_random_slice<T: Default + Copy + Into<f32>>(data_file: &str, mut p_val: f64) -> ANNResult<(Vec<f32>, usize, usize)> {
+pub fn gen_random_slice<T: Default + Copy + Into<f32>>(
+    data_file: &str,
+    mut p_val: f64,
+) -> ANNResult<(Vec<f32>, usize, usize)> {
     let read_blk_size = 64 * 1024 * 1024;
     let mut reader = CachedReader::new(data_file, read_blk_size)?;
 
@@ -86,15 +89,18 @@ pub fn gen_sample_data<T>(data_file: &str, output_file: &str, sampling_rate: f64
     sample_data_writer.write_all(&num_sampled_pts.to_le_bytes())?;
     sample_id_writer.seek(SeekFrom::Start(0))?;
     sample_id_writer.write_all(&num_sampled_pts.to_le_bytes())?;
-    println!("Wrote {} points to sample file: {}", num_sampled_pts, sample_data_path);
+    println!(
+        "Wrote {} points to sample file: {}",
+        num_sampled_pts, sample_data_path
+    );
 
     Ok(())
 }
 
 #[cfg(test)]
 mod partition_test {
+    use byteorder::{LittleEndian, ReadBytesExt};
     use std::{fs, io::Read};
-    use byteorder::{ReadBytesExt, LittleEndian};
 
     use crate::utils::file_exists;
 
@@ -104,11 +110,13 @@ mod partition_test {
     fn gen_sample_data_test() {
         let file_name = "gen_sample_data_test.bin";
         //npoints=2, dim=8
-        let data: [u8; 72] = [2, 0, 0, 0, 8, 0, 0, 0, 
-            0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x80, 0x40, 
-            0x00, 0x00, 0xa0, 0x40, 0x00, 0x00, 0xc0, 0x40, 0x00, 0x00, 0xe0, 0x40, 0x00, 0x00, 0x00, 0x41, 
-            0x00, 0x00, 0x10, 0x41, 0x00, 0x00, 0x20, 0x41, 0x00, 0x00, 0x30, 0x41, 0x00, 0x00, 0x40, 0x41, 
-            0x00, 0x00, 0x50, 0x41, 0x00, 0x00, 0x60, 0x41, 0x00, 0x00, 0x70, 0x41, 0x00, 0x00, 0x80, 0x41]; 
+        let data: [u8; 72] = [
+            2, 0, 0, 0, 8, 0, 0, 0, 0x00, 0x00, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
+            0x40, 0x40, 0x00, 0x00, 0x80, 0x40, 0x00, 0x00, 0xa0, 0x40, 0x00, 0x00, 0xc0, 0x40,
+            0x00, 0x00, 0xe0, 0x40, 0x00, 0x00, 0x00, 0x41, 0x00, 0x00, 0x10, 0x41, 0x00, 0x00,
+            0x20, 0x41, 0x00, 0x00, 0x30, 0x41, 0x00, 0x00, 0x40, 0x41, 0x00, 0x00, 0x50, 0x41,
+            0x00, 0x00, 0x60, 0x41, 0x00, 0x00, 0x70, 0x41, 0x00, 0x00, 0x80, 0x41,
+        ];
         std::fs::write(file_name, data).expect("Failed to write sample file");
 
         let sample_file_prefix = file_name.to_string() + "_sample";
@@ -148,4 +156,3 @@ mod partition_test {
         fs::remove_file(sample_ids_path.as_str()).expect("Failed to delete file");
     }
 }
-

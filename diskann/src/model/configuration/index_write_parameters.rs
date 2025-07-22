@@ -25,7 +25,7 @@ pub mod default_param_vals {
 
     /// Default value of number of frozen points.
     pub const NUM_FROZEN_POINTS: u32 = 0;
-    
+
     /// Default value of max degree.
     pub const MAX_DEGREE: u32 = 64;
 
@@ -62,7 +62,7 @@ pub struct IndexWriteParameters {
 
     /// Number of threads.
     pub num_threads: u32,
-    
+
     /// Number of frozen points.
     pub num_frozen_points: u32,
 }
@@ -78,7 +78,7 @@ impl Default for IndexWriteParameters {
             alpha: default_param_vals::ALPHA,
             num_rounds: default_param_vals::NUM_ROUNDS,
             num_threads: default_param_vals::NUM_THREADS,
-            num_frozen_points: default_param_vals::NUM_FROZEN_POINTS
+            num_frozen_points: default_param_vals::NUM_FROZEN_POINTS,
         }
     }
 }
@@ -161,13 +161,19 @@ impl IndexWriteParametersBuilder {
         IndexWriteParameters {
             search_list_size: self.search_list_size,
             max_degree: self.max_degree,
-            saturate_graph: self.saturate_graph.unwrap_or(default_param_vals::SATURATE_GRAPH),
-            max_occlusion_size: self.max_occlusion_size.unwrap_or(default_param_vals::MAX_OCCLUSION_SIZE),
+            saturate_graph: self
+                .saturate_graph
+                .unwrap_or(default_param_vals::SATURATE_GRAPH),
+            max_occlusion_size: self
+                .max_occlusion_size
+                .unwrap_or(default_param_vals::MAX_OCCLUSION_SIZE),
             alpha: self.alpha.unwrap_or(default_param_vals::ALPHA),
             num_rounds: self.num_rounds.unwrap_or(default_param_vals::NUM_ROUNDS),
             num_threads: self.num_threads.unwrap_or(default_param_vals::NUM_THREADS),
             // filter_list_size: self.filter_list_size.unwrap_or(default_param_vals::FILTER_LIST_SIZE),
-            num_frozen_points: self.num_frozen_points.unwrap_or(default_param_vals::NUM_FROZEN_POINTS),
+            num_frozen_points: self
+                .num_frozen_points
+                .unwrap_or(default_param_vals::NUM_FROZEN_POINTS),
         }
     }
 }
@@ -199,7 +205,10 @@ mod parameters_test {
         assert_eq!(wp1.search_list_size, default_param_vals::SEARCH_LIST_SIZE);
         assert_eq!(wp1.max_degree, default_param_vals::MAX_DEGREE);
         assert_eq!(wp1.saturate_graph, default_param_vals::SATURATE_GRAPH);
-        assert_eq!(wp1.max_occlusion_size, default_param_vals::MAX_OCCLUSION_SIZE);
+        assert_eq!(
+            wp1.max_occlusion_size,
+            default_param_vals::MAX_OCCLUSION_SIZE
+        );
         assert_eq!(wp1.alpha, default_param_vals::ALPHA);
         assert_eq!(wp1.num_rounds, default_param_vals::NUM_ROUNDS);
         assert_eq!(wp1.num_threads, default_param_vals::NUM_THREADS);
@@ -213,12 +222,15 @@ mod parameters_test {
         assert_eq!(wp1.search_list_size, 10);
         assert_eq!(wp1.max_degree, 20);
         assert_eq!(wp1.saturate_graph, default_param_vals::SATURATE_GRAPH);
-        assert_eq!(wp1.max_occlusion_size, default_param_vals::MAX_OCCLUSION_SIZE);
+        assert_eq!(
+            wp1.max_occlusion_size,
+            default_param_vals::MAX_OCCLUSION_SIZE
+        );
         assert_eq!(wp1.alpha, default_param_vals::ALPHA);
         assert_eq!(wp1.num_rounds, default_param_vals::NUM_ROUNDS);
         assert_eq!(wp1.num_threads, default_param_vals::NUM_THREADS);
         assert_eq!(wp1.num_frozen_points, default_param_vals::NUM_FROZEN_POINTS);
-    
+
         // build with custom values
         let wp2 = IndexWriteParametersBuilder::new(10, 20)
             .with_max_occlusion_size(30)
@@ -236,10 +248,9 @@ mod parameters_test {
         assert_eq!(wp2.num_rounds, 40);
         assert_eq!(wp2.num_threads, 50);
         assert_eq!(wp2.num_frozen_points, 60);
-    
+
         // test from
         let wp3 = IndexWriteParametersBuilder::from(wp2).build();
         assert_eq!(wp3, wp2);
     }
 }
-

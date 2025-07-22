@@ -77,8 +77,7 @@ mod timer_tests {
         if cfg!(windows) {
             assert!(timer.pid.is_some());
             assert!(timer.cycles.is_some());
-        }
-        else {
+        } else {
             assert!(timer.pid.is_none());
             assert!(timer.cycles.is_none());
         }
@@ -100,4 +99,3 @@ mod timer_tests {
         assert!(timer.elapsed_seconds() > 0.1);
     }
 }
-

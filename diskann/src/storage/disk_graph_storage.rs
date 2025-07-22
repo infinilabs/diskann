@@ -8,7 +8,10 @@
 
 use std::sync::Arc;
 
-use crate::{model::{WindowsAlignedFileReader, IOContext, AlignedRead}, common::ANNResult};
+use crate::{
+    common::ANNResult,
+    model::{AlignedRead, IOContext, WindowsAlignedFileReader},
+};
 
 /// Graph storage for disk index
 /// One thread has one storage instance

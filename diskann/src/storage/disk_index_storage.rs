@@ -227,10 +227,7 @@ impl<T> DiskIndexStorage<T> {
     }
 
     /// Load pre-trained pivot table
-    pub fn load_pq_pivots_bin(
-        &self,
-        num_pq_chunks: &usize,
-    ) -> ANNResult<PQPivotData> {
+    pub fn load_pq_pivots_bin(&self, num_pq_chunks: &usize) -> ANNResult<PQPivotData> {
         let pq_pivots_path = &self.pq_pivot_file();
         if !file_exists(pq_pivots_path) {
             return Err(ANNError::log_pq_error(
@@ -270,10 +267,10 @@ impl<T> DiskIndexStorage<T> {
         }
 
         Ok(PQPivotData {
-            dim, 
-            pq_table, 
-            centroids, 
-            chunk_offsets
+            dim,
+            pq_table,
+            centroids,
+            chunk_offsets,
         })
     }
 
@@ -316,7 +313,8 @@ mod disk_index_storage_test {
         let storage = DiskIndexStorage::<f32>::new(
             get_test_file_path(TEST_DATA_FILE),
             get_test_file_path(DISK_INDEX_PATH_PREFIX),
-        ).unwrap();
+        )
+        .unwrap();
         storage.create_disk_layout().unwrap();
 
         let disk_layout_file = storage.disk_index_file();
@@ -336,10 +334,10 @@ mod disk_index_storage_test {
         let storage = DiskIndexStorage::<f32>::new(
             get_test_file_path(TEST_DATA_FILE),
             pivot_file_prefix.to_string(),
-        ).unwrap();            
+        )
+        .unwrap();
 
-        let pq_pivot_data =
-            storage.load_pq_pivots_bin(&num_pq_chunk).unwrap();
+        let pq_pivot_data = storage.load_pq_pivots_bin(&num_pq_chunk).unwrap();
 
         assert_eq!(pq_pivot_data.pq_table.len(), NUM_PQ_CENTROIDS * dim);
         assert_eq!(pq_pivot_data.centroids.len(), dim);
@@ -357,7 +355,8 @@ mod disk_index_storage_test {
         let storage = DiskIndexStorage::<f32>::new(
             get_test_file_path(TEST_DATA_FILE),
             pivot_file_prefix.to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         let _ = storage.load_pq_pivots_bin(&num_pq_chunk).unwrap();
     }
 }

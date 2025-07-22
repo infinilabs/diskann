@@ -63,7 +63,11 @@ where
     }
 
     /// Build the dataset from file
-    pub fn build_from_file_with_enhance(&mut self, filename: &str, num_points_to_load: usize) -> ANNResult<()> {
+    pub fn build_from_file_with_enhance(
+        &mut self,
+        filename: &str,
+        num_points_to_load: usize,
+    ) -> ANNResult<()> {
         println!(
             "Loading {} vectors from file {} into dataset...",
             num_points_to_load, filename

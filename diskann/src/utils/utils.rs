@@ -2,32 +2,40 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT license.
  */
-use std::sync::Mutex;
 use num_traits::Num;
+use std::sync::Mutex;
 
 /// Non recursive mutex
 pub type NonRecursiveMutex = Mutex<()>;
 
 /// Round up X to the nearest multiple of Y
 #[inline]
-pub fn round_up<T>(x: T, y: T) -> T 
-where T : Num + Copy
+pub fn round_up<T>(x: T, y: T) -> T
+where
+    T: Num + Copy,
 {
     div_round_up(x, y) * y
 }
 
 /// Rounded-up division
 #[inline]
-pub fn div_round_up<T>(x: T, y: T) -> T 
-where T : Num + Copy
+pub fn div_round_up<T>(x: T, y: T) -> T
+where
+    T: Num + Copy,
 {
-    (x / y) + if x % y != T::zero() {T::one()} else {T::zero()}
+    (x / y)
+        + if x % y != T::zero() {
+            T::one()
+        } else {
+            T::zero()
+        }
 }
 
 /// Round down X to the nearest multiple of Y
 #[inline]
 pub fn round_down<T>(x: T, y: T) -> T
-where T : Num + Copy
+where
+    T: Num + Copy,
 {
     (x / y) * y
 }
@@ -35,7 +43,8 @@ where T : Num + Copy
 /// Is aligned
 #[inline]
 pub fn is_aligned<T>(x: T, y: T) -> bool
-where T : Num + Copy
+where
+    T: Num + Copy,
 {
     x % y == T::zero()
 }
@@ -121,7 +130,7 @@ mod file_util_test {
         assert!(is_4096_aligned(4096));
     }
 
-    #[test] 
+    #[test]
     fn convert_types_test() {
         let data = vec![0u64, 1u64, 2u64];
         let output = convert_types_u64_usize(&data, 3, 1);
@@ -145,11 +154,10 @@ mod file_util_test {
         let output = convert_types_u32_usize(&data, 3, 1);
         assert_eq!(output.len(), 3);
         assert_eq!(type_of(output[0]), "usize");
-        assert_eq!(output[0],0usize);
+        assert_eq!(output[0], 0usize);
     }
 
     fn type_of<T>(_: T) -> &'static str {
         type_name::<T>()
     }
 }
-

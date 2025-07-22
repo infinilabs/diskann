@@ -5,7 +5,7 @@
 use half::{bf16, f16};
 use std::env;
 use std::fs::{File, OpenOptions};
-use std::io::{self, Read, Write, BufReader, BufWriter};
+use std::io::{self, BufReader, BufWriter, Read, Write};
 
 enum F16OrBF16 {
     F16(f16),
@@ -17,7 +17,7 @@ fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
     match args.len() {
-        3|4|5|6=> {},
+        3 | 4 | 5 | 6 => {}
         _ => {
             print_usage();
             std::process::exit(1);
@@ -29,7 +29,11 @@ fn main() -> io::Result<()> {
     let output_file_path = &args[2];
     let use_f16 = args.len() >= 4 && args[3] == "f16";
     let save_as_float = args.len() >= 5 && args[4] == "save_as_float";
-    let batch_size = if args.len() >= 6 { args[5].parse::<i32>().unwrap() } else { 100000 };
+    let batch_size = if args.len() >= 6 {
+        args[5].parse::<i32>().unwrap()
+    } else {
+        100000
+    };
     println!("use_f16: {}", use_f16);
     println!("save_as_float: {}", save_as_float);
     println!("batch_size: {}", batch_size);
@@ -38,7 +42,12 @@ fn main() -> io::Result<()> {
     let mut input_file = BufReader::new(File::open(input_file_path)?);
 
     // Open the output file for writing
-    let mut output_file = BufWriter::new(OpenOptions::new().write(true).create(true).open(output_file_path)?);
+    let mut output_file = BufWriter::new(
+        OpenOptions::new()
+            .write(true)
+            .create(true)
+            .open(output_file_path)?,
+    );
 
     // Read the first 8 bytes as metadata
     let mut metadata = [0; 8];
@@ -55,7 +64,7 @@ fn main() -> io::Result<()> {
     let data_point_size = (dimension * 4 * batch_size) as usize;
     let mut batches_processed = 0;
     let numbers_to_print = 2;
-    let mut numbers_printed = 0; 
+    let mut numbers_printed = 0;
     let mut num_fb16_wins = 0;
     let mut num_f16_wins = 0;
     let mut bf16_overflow = 0;
@@ -65,7 +74,7 @@ fn main() -> io::Result<()> {
     for _ in 0..num_batches {
         // Read one data point from the input file
         let mut buffer = vec![0; data_point_size];
-        match input_file.read_exact(&mut buffer){
+        match input_file.read_exact(&mut buffer) {
             Ok(()) => {
                 // Convert the float32 data to bf16
                 let half_data: Vec<F16OrBF16> = buffer
@@ -105,29 +114,41 @@ fn main() -> io::Result<()> {
                 })
                 .collect();
 
-            batches_processed += 1;
+                batches_processed += 1;
 
-            match save_as_float {
-                true => {
-                    for float_val in half_data {
-                        match float_val {
-                            F16OrBF16::F16(f16_val) => output_file.write_all(&f16_val.to_f32().to_le_bytes())?,
-                            F16OrBF16::BF16(bf16_val) => output_file.write_all(&bf16_val.to_f32().to_le_bytes())?,
+                match save_as_float {
+                    true => {
+                        for float_val in half_data {
+                            match float_val {
+                                F16OrBF16::F16(f16_val) => {
+                                    output_file.write_all(&f16_val.to_f32().to_le_bytes())?
+                                }
+                                F16OrBF16::BF16(bf16_val) => {
+                                    output_file.write_all(&bf16_val.to_f32().to_le_bytes())?
+                                }
+                            }
+                        }
+                    }
+                    false => {
+                        for float_val in half_data {
+                            match float_val {
+                                F16OrBF16::F16(f16_val) => {
+                                    output_file.write_all(&f16_val.to_le_bytes())?
+                                }
+                                F16OrBF16::BF16(bf16_val) => {
+                                    output_file.write_all(&bf16_val.to_le_bytes())?
+                                }
+                            }
                         }
                     }
                 }
-                false => {
-                    for float_val in half_data {
-                        match float_val {
-                            F16OrBF16::F16(f16_val) => output_file.write_all(&f16_val.to_le_bytes())?,
-                            F16OrBF16::BF16(bf16_val) => output_file.write_all(&bf16_val.to_le_bytes())?,
-                        }
-                    }
-                }
-             }
 
-            // Print the number of points processed
-            println!("Processed {} points out of {}", batches_processed * batch_size, num_points);
+                // Print the number of points processed
+                println!(
+                    "Processed {} points out of {}",
+                    batches_processed * batch_size,
+                    num_points
+                );
             }
             Err(ref e) if e.kind() == io::ErrorKind::UnexpectedEof => {
                 println!("Conversion completed! {} of times f16 wins | overflow count {}, {} of times bf16 wins | overflow count{}",
@@ -151,4 +172,3 @@ fn print_usage() {
     println!("specify save_as_float to downcast to f16 or bf16, and upcast to float before saving the output data. otherwise, the data will be saved as half type.");
     println!("specify the batch_size as a int, the default value is 100000.");
 }
-

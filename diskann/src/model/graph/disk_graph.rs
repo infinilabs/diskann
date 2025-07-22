@@ -6,15 +6,15 @@
 
 //! Disk graph
 
-use byteorder::{LittleEndian, ByteOrder};
+use byteorder::{ByteOrder, LittleEndian};
 use vector::FullPrecisionDistance;
 
-use crate::common::{ANNResult, ANNError};
+use crate::common::{ANNError, ANNResult};
 use crate::model::data_store::DiskScratchDataset;
 use crate::model::Vertex;
 use crate::storage::DiskGraphStorage;
 
-use super::{VertexAndNeighbors, SectorGraph, AdjacencyList};
+use super::{AdjacencyList, SectorGraph, VertexAndNeighbors};
 
 /// Disk graph
 pub struct DiskGraph {
@@ -40,11 +40,11 @@ pub struct DiskGraph {
 impl<'a> DiskGraph {
     /// Create DiskGraph instance
     pub fn new(
-        dim: usize, 
+        dim: usize,
         num_nodes_per_sector: u64,
         max_node_len: u64,
         fp_vector_len: u64,
-        beam_width: usize, 
+        beam_width: usize,
         graph_storage: DiskGraphStorage,
     ) -> ANNResult<Self> {
         let graph = Self {
@@ -66,7 +66,11 @@ impl<'a> DiskGraph {
 
     /// Fetch nodes from disk index
     pub fn fetch_nodes(&mut self) -> ANNResult<()> {
-        let sectors_to_fetch: Vec<u64> = self.nodes_to_fetch.iter().map(|&id| self.node_sector_index(id)).collect();
+        let sectors_to_fetch: Vec<u64> = self
+            .nodes_to_fetch
+            .iter()
+            .map(|&id| self.node_sector_index(id))
+            .collect();
         self.sector_graph.read_graph(&sectors_to_fetch)?;
 
         Ok(())
@@ -75,10 +79,10 @@ impl<'a> DiskGraph {
     /// Copy disk fp vector to DiskScratchDataset
     /// Return the fp vector with aligned dim from DiskScratchDataset
     pub fn copy_fp_vector_to_disk_scratch_dataset<T, const N: usize>(
-        &self, 
+        &self,
         node_index: usize,
-        disk_scratch_dataset: &'a mut DiskScratchDataset<T, N>
-    ) -> ANNResult<Vertex<'a, T, N>> 
+        disk_scratch_dataset: &'a mut DiskScratchDataset<T, N>,
+    ) -> ANNResult<Vertex<'a, T, N>>
     where
         T: Copy,
         [T; N]: FullPrecisionDistance<T, N>,
@@ -86,16 +90,24 @@ impl<'a> DiskGraph {
         if self.dim > N {
             return Err(ANNError::log_index_error(format!(
                 "copy_sector_fp_to_aligned_dataset: dim {} is greater than aligned dim {}",
-                self.dim, N)));
+                self.dim, N
+            )));
         }
 
         let fp_vector_buf = self.node_fp_vector_buf(node_index);
 
         // Safety condition is met here
-        let aligned_dim_vector = unsafe { disk_scratch_dataset.memcpy_from_fp_vector_buf(fp_vector_buf) };
+        let aligned_dim_vector =
+            unsafe { disk_scratch_dataset.memcpy_from_fp_vector_buf(fp_vector_buf) };
 
-        Vertex::<'a, T, N>::try_from((aligned_dim_vector, self.nodes_to_fetch[node_index]))
-            .map_err(|err| ANNError::log_index_error(format!("TryFromSliceError: failed to get Vertex for disk index node, err={}", err)))
+        Vertex::<'a, T, N>::try_from((aligned_dim_vector, self.nodes_to_fetch[node_index])).map_err(
+            |err| {
+                ANNError::log_index_error(format!(
+                    "TryFromSliceError: failed to get Vertex for disk index node, err={}",
+                    err
+                ))
+            },
+        )
     }
 
     /// Reset graph
@@ -130,7 +142,8 @@ impl<'a> DiskGraph {
 
         // get sector_buf where this node is located
         let sector_buf = self.sector_graph.get_sector_buf(node_index);
-        let node_offset = (vertex_id as u64 % self.num_nodes_per_sector * self.max_node_len) as usize;
+        let node_offset =
+            (vertex_id as u64 % self.num_nodes_per_sector * self.max_node_len) as usize;
         &sector_buf[node_offset..node_offset + self.max_node_len as usize]
     }
 
@@ -147,8 +160,7 @@ pub struct DiskGraphIntoIterator<'a> {
     index: usize,
 }
 
-impl<'a> IntoIterator for &'a DiskGraph
-{
+impl<'a> IntoIterator for &'a DiskGraph {
     type IntoIter = DiskGraphIntoIterator<'a>;
     type Item = ANNResult<(usize, VertexAndNeighbors)>;
 
@@ -161,8 +173,7 @@ impl<'a> IntoIterator for &'a DiskGraph
     }
 }
 
-impl<'a> Iterator for DiskGraphIntoIterator<'a> 
-{
+impl<'a> Iterator for DiskGraphIntoIterator<'a> {
     type Item = ANNResult<(usize, VertexAndNeighbors)>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -170,11 +181,10 @@ impl<'a> Iterator for DiskGraphIntoIterator<'a>
             return None;
         }
 
-        let node_index = self.index;    
+        let node_index = self.index;
         let vertex_and_neighbors = self.graph.get_vertex_and_neighbors(self.index);
-    
+
         self.index += 1;
         Some(Ok((node_index, vertex_and_neighbors)))
     }
 }
-

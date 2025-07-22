@@ -8,8 +8,8 @@
 
 use std::ops::Deref;
 
-use crate::common::{AlignedBoxWithSlice, ANNResult, ANNError};
-use crate::model::{MAX_N_SECTOR_READS, SECTOR_LEN, AlignedRead};
+use crate::common::{ANNError, ANNResult, AlignedBoxWithSlice};
+use crate::model::{AlignedRead, MAX_N_SECTOR_READS, SECTOR_LEN};
 use crate::storage::DiskGraphStorage;
 
 /// Sector graph read from disk index
@@ -30,8 +30,8 @@ pub struct SectorGraph {
 impl SectorGraph {
     /// Create SectorGraph instance
     pub fn new(graph_storage: DiskGraphStorage) -> ANNResult<Self> {
-        Ok(Self { 
-            sectors_data: AlignedBoxWithSlice::new(MAX_N_SECTOR_READS * SECTOR_LEN, SECTOR_LEN)?, 
+        Ok(Self {
+            sectors_data: AlignedBoxWithSlice::new(MAX_N_SECTOR_READS * SECTOR_LEN, SECTOR_LEN)?,
             graph_storage,
             cur_sector_idx: 0,
         })
@@ -55,8 +55,10 @@ impl SectorGraph {
         }
 
         let mut sector_slices = self.sectors_data.split_into_nonoverlapping_mut_slices(
-            cur_sector_idx_usize * SECTOR_LEN..(cur_sector_idx_usize + sectors_to_fetch.len()) * SECTOR_LEN, 
-            SECTOR_LEN)?;
+            cur_sector_idx_usize * SECTOR_LEN
+                ..(cur_sector_idx_usize + sectors_to_fetch.len()) * SECTOR_LEN,
+            SECTOR_LEN,
+        )?;
 
         let mut read_requests = Vec::with_capacity(sector_slices.len());
         for (local_sector_idx, slice) in sector_slices.iter_mut().enumerate() {
@@ -84,4 +86,3 @@ impl Deref for SectorGraph {
         &self.sectors_data
     }
 }
-

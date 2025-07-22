@@ -21,7 +21,7 @@ pub struct IndexConfiguration {
 
     /// Dimension of the raw data
     pub dim: usize,
-    
+
     /// Aligned dimension - round up dim to the nearest multiple of 8
     pub aligned_dim: usize,
 
@@ -46,7 +46,6 @@ pub struct IndexConfiguration {
 
     /// potential for growth. 1.2 means the index can grow by up to 20%.
     pub growth_potential: f32,
-
     // TODO: below settings are not supported in current iteration
     // pub concurrent_consolidate: bool,
     // pub has_built: bool,
@@ -60,16 +59,16 @@ impl IndexConfiguration {
     /// Create IndexConfiguration instance
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        dist_metric: Metric, 
-        dim: usize, 
+        dist_metric: Metric,
+        dim: usize,
         aligned_dim: usize,
-        max_points: usize, 
-        use_pq_dist: bool, 
-        num_pq_chunks: usize, 
-        use_opq: bool, 
-        num_frozen_pts: usize, 
-        growth_potential: f32, 
-        index_write_parameter: IndexWriteParameters
+        max_points: usize,
+        use_pq_dist: bool,
+        num_pq_chunks: usize,
+        use_opq: bool,
+        num_frozen_pts: usize,
+        growth_potential: f32,
+        index_write_parameter: IndexWriteParameters,
     ) -> Self {
         Self {
             index_write_parameter,

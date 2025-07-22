@@ -7,9 +7,19 @@ use std::env;
 extern crate prost_build;
 
 fn main() {
-    println!("cargo:warning=cfg!(target_os): {}", if cfg!(target_os = "linux") { "linux" } else { "not linux" });
-    println!("cargo:warning=std::env::consts::OS: {}", std::env::consts::OS);
-    
+    println!(
+        "cargo:warning=cfg!(target_os): {}",
+        if cfg!(target_os = "linux") {
+            "linux"
+        } else {
+            "not linux"
+        }
+    );
+    println!(
+        "cargo:warning=std::env::consts::OS: {}",
+        std::env::consts::OS
+    );
+
     println!("cargo:rerun-if-changed=src/indexlog.proto");
     if cfg!(target_os = "linux") {
         /*
@@ -32,7 +42,7 @@ fn main() {
             .to_string();
         env::set_var("PROTOC_INCLUDE", protobuf_inc_path);
         */
-    
+
         prost_build::compile_protos(&["src/indexlog.proto"], &["src/"]).unwrap();
     } else {
         let protopkg = vcpkg::find_package("protobuf").unwrap();

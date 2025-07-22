@@ -8,7 +8,7 @@ use logger::logger::indexlog::Log;
 use logger::logger::indexlog::LogLevel;
 use logger::message_handler::send_log;
 
-use crate::{utils::Timer, common::ANNResult};
+use crate::{common::ANNResult, utils::Timer};
 
 pub struct DiskIndexBuildLogger {
     timer: Timer,
@@ -17,13 +17,16 @@ pub struct DiskIndexBuildLogger {
 
 impl DiskIndexBuildLogger {
     pub fn new(checkpoint: DiskIndexConstructionCheckpoint) -> Self {
-        Self { 
+        Self {
             timer: Timer::new(),
             checkpoint,
         }
     }
 
-    pub fn log_checkpoint(&mut self, next_checkpoint: DiskIndexConstructionCheckpoint) -> ANNResult<()> {
+    pub fn log_checkpoint(
+        &mut self,
+        next_checkpoint: DiskIndexConstructionCheckpoint,
+    ) -> ANNResult<()> {
         if self.checkpoint == DiskIndexConstructionCheckpoint::None {
             return Ok(());
         }
@@ -51,7 +54,11 @@ mod dataset_test {
     #[test]
     fn test_log() {
         let mut logger = DiskIndexBuildLogger::new(DiskIndexConstructionCheckpoint::PqConstruction);
-        logger.log_checkpoint(DiskIndexConstructionCheckpoint::InmemIndexBuild).unwrap();logger.log_checkpoint(logger::logger::indexlog::DiskIndexConstructionCheckpoint::DiskLayout).unwrap();
+        logger
+            .log_checkpoint(DiskIndexConstructionCheckpoint::InmemIndexBuild)
+            .unwrap();
+        logger
+            .log_checkpoint(logger::logger::indexlog::DiskIndexConstructionCheckpoint::DiskLayout)
+            .unwrap();
     }
 }
-

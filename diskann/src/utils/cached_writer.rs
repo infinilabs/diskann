@@ -2,8 +2,8 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT license.
  */
-use std::io::{Write, Seek, SeekFrom};
-use std::fs::{OpenOptions, File};
+use std::fs::{File, OpenOptions};
+use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 
 pub struct CachedWriter {
@@ -29,11 +29,14 @@ impl CachedWriter {
             .write(true)
             .create(true)
             .open(Path::new(filename))?;
-        
+
         if cache_size == 0 {
-            return Err(std::io::Error::new(std::io::ErrorKind::Other, "Cache size must be greater than 0"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Cache size must be greater than 0",
+            ));
         }
-        
+
         println!("Opened: {}, cache_size: {}", filename, cache_size);
         Ok(Self {
             writer,
@@ -64,12 +67,14 @@ impl CachedWriter {
         let n_bytes = write_buf.len() as u64;
         if n_bytes <= (self.cache_size - self.cur_off) {
             // case 1: cache can take all data
-            self.cache_buf[(self.cur_off as usize)..((self.cur_off + n_bytes) as usize)].copy_from_slice(&write_buf[..n_bytes as usize]);
+            self.cache_buf[(self.cur_off as usize)..((self.cur_off + n_bytes) as usize)]
+                .copy_from_slice(&write_buf[..n_bytes as usize]);
             self.cur_off += n_bytes;
         } else {
             // case 2: cache cant take all data
             // go to disk and write existing cache data
-            self.writer.write_all(&self.cache_buf[..self.cur_off as usize])?;
+            self.writer
+                .write_all(&self.cache_buf[..self.cur_off as usize])?;
             self.fsize += self.cur_off;
             // write the new data to disk
             self.writer.write_all(write_buf)?;
@@ -88,7 +93,8 @@ impl CachedWriter {
     }
 
     fn flush_cache(&mut self) -> std::io::Result<()> {
-        self.writer.write_all(&self.cache_buf[..self.cur_off as usize])?;
+        self.writer
+            .write_all(&self.cache_buf[..self.cur_off as usize])?;
         self.fsize += self.cur_off;
         self.cache_buf.fill(0);
         self.cur_off = 0;
@@ -112,11 +118,13 @@ mod cached_writer_test {
     fn cached_writer_works() {
         let file_name = "cached_writer_works_test.bin";
         //npoints=2, dim=8, 2 vectors [1.0;8] [2.0;8]
-        let data: [u8; 72] = [2, 0, 1, 2, 8, 0, 1, 3, 
-            0x00, 0x01, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x40, 0x40, 0x00, 0x00, 0x80, 0x40, 
-            0x00, 0x00, 0xa0, 0x40, 0x00, 0x00, 0xc0, 0x40, 0x00, 0x00, 0xe0, 0x40, 0x00, 0x00, 0x00, 0x41, 
-            0x00, 0x00, 0x10, 0x41, 0x00, 0x00, 0x20, 0x41, 0x00, 0x00, 0x30, 0x41, 0x00, 0x00, 0x40, 0x41, 
-            0x00, 0x00, 0x50, 0x41, 0x00, 0x00, 0x60, 0x41, 0x00, 0x00, 0x70, 0x41, 0x00, 0x11, 0x80, 0x41]; 
+        let data: [u8; 72] = [
+            2, 0, 1, 2, 8, 0, 1, 3, 0x00, 0x01, 0x80, 0x3f, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
+            0x40, 0x40, 0x00, 0x00, 0x80, 0x40, 0x00, 0x00, 0xa0, 0x40, 0x00, 0x00, 0xc0, 0x40,
+            0x00, 0x00, 0xe0, 0x40, 0x00, 0x00, 0x00, 0x41, 0x00, 0x00, 0x10, 0x41, 0x00, 0x00,
+            0x20, 0x41, 0x00, 0x00, 0x30, 0x41, 0x00, 0x00, 0x40, 0x41, 0x00, 0x00, 0x50, 0x41,
+            0x00, 0x00, 0x60, 0x41, 0x00, 0x00, 0x70, 0x41, 0x00, 0x11, 0x80, 0x41,
+        ];
 
         let mut writer = CachedWriter::new(file_name, 8).unwrap();
         assert_eq!(writer.get_file_size(), 0);
@@ -139,4 +147,3 @@ mod cached_writer_test {
         fs::remove_file(file_name).expect("Failed to delete file");
     }
 }
-

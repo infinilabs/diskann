@@ -10,7 +10,7 @@ use std::alloc::Layout;
 use std::ops::{Deref, DerefMut, Range};
 use std::ptr::copy_nonoverlapping;
 
-use super::{ANNResult, ANNError};
+use super::{ANNError, ANNResult};
 
 #[derive(Debug)]
 /// A box that holds a slice but is aligned to the specified layout.
@@ -27,8 +27,9 @@ pub struct AlignedBoxWithSlice<T> {
     val: Box<[T]>,
 }
 
-impl<T> AlignedBoxWithSlice<T> 
-where T: Copy
+impl<T> AlignedBoxWithSlice<T>
+where
+    T: Copy,
 {
     /// Creates a new `AlignedBoxWithSlice` with the given capacity and alignment.
     /// The allocated memory are set to 0.
@@ -42,7 +43,8 @@ where T: Copy
     /// for the type `T` and that the memory is initialized before accessing the elements
     /// of the slice.
     pub fn new(capacity: usize, alignment: usize) -> ANNResult<Self> {
-        let allocsize = capacity.checked_mul(std::mem::size_of::<T>())
+        let allocsize = capacity
+            .checked_mul(std::mem::size_of::<T>())
             .ok_or_else(|| ANNError::log_index_error("capacity overflow".to_string()))?;
         let layout = Layout::from_size_align(allocsize, alignment)
             .map_err(ANNError::log_mem_alloc_layout_error)?;
@@ -60,7 +62,7 @@ where T: Copy
     pub fn double_capacity(&mut self) -> ANNResult<()> {
         self.ensure_capacity(self.capacity() * 2)
     }
-    
+
     pub fn ensure_capacity(&mut self, capacity: usize) -> ANNResult<()> {
         let orig_capacity = self.capacity();
         if capacity <= orig_capacity {
@@ -70,20 +72,21 @@ where T: Copy
         let power = (capacity - 1 + orig_capacity) / orig_capacity;
         let new_capacity = power * orig_capacity;
 
-        let mut new_slice: AlignedBoxWithSlice<T> = AlignedBoxWithSlice::new(new_capacity, self.alignment())?;
+        let mut new_slice: AlignedBoxWithSlice<T> =
+            AlignedBoxWithSlice::new(new_capacity, self.alignment())?;
 
         // copy original slice to new slice
         new_slice.val[0..self.val.len()].copy_from_slice(&self.val);
-        
+
         *self = new_slice;
-        
+
         Ok(())
     }
-    
+
     pub fn capacity(&self) -> usize {
         self.val.len()
     }
-    
+
     pub fn alignment(&self) -> usize {
         self.layout.align()
     }
@@ -101,7 +104,11 @@ where T: Copy
     /// Copies data from the source slice to the destination box.
     pub fn memcpy(&mut self, src: &[T]) -> ANNResult<()> {
         if src.len() > self.val.len() {
-            return Err(ANNError::log_index_error(format!("source slice is too large (src:{}, dst:{})", src.len(), self.val.len())));
+            return Err(ANNError::log_index_error(format!(
+                "source slice is too large (src:{}, dst:{})",
+                src.len(),
+                self.val.len()
+            )));
         }
 
         // Check that they don't overlap
@@ -111,7 +118,9 @@ where T: Copy
         let dst_end = unsafe { dst_ptr.add(self.val.len()) };
 
         if src_ptr < dst_end && src_end > dst_ptr {
-            return Err(ANNError::log_index_error("Source and destination overlap".to_string()));
+            return Err(ANNError::log_index_error(
+                "Source and destination overlap".to_string(),
+            ));
         }
 
         unsafe {
@@ -123,7 +132,11 @@ where T: Copy
 
     /// Split the range of memory into nonoverlapping mutable slices.
     /// The number of returned slices is (range length / slice_len) and each has a length of slice_len.
-    pub fn split_into_nonoverlapping_mut_slices(&mut self, range: Range<usize>, slice_len: usize) -> ANNResult<Vec<&mut [T]>> {
+    pub fn split_into_nonoverlapping_mut_slices(
+        &mut self,
+        range: Range<usize>,
+        slice_len: usize,
+    ) -> ANNResult<Vec<&mut [T]>> {
         if range.len() % slice_len != 0 || range.end > self.len() {
             return Err(ANNError::log_index_error(format!(
                 "Cannot split range ({:?}) of AlignedBoxWithSlice (len: {}) into nonoverlapping mutable slices with length {}", 
@@ -145,7 +158,6 @@ where T: Copy
         Ok(slices)
     }
 }
-
 
 impl<T> Drop for AlignedBoxWithSlice<T> {
     /// Frees the memory allocated for the slice using the global allocator.
@@ -255,10 +267,10 @@ mod tests {
     fn memcpy_test() {
         let size = 1_000_000;
         let mut data = AlignedBoxWithSlice::<f32>::new(size, 32).unwrap();
-        let mut destination = AlignedBoxWithSlice::<f32>::new(size-2, 32).unwrap();
+        let mut destination = AlignedBoxWithSlice::<f32>::new(size - 2, 32).unwrap();
         let mut_destination = destination.as_mut_slice();
         data.memcpy(mut_destination).unwrap();
-        (0..size-2).for_each(|i| {
+        (0..size - 2).for_each(|i| {
             assert_eq!(data[i], mut_destination[i]);
         });
     }
@@ -267,7 +279,7 @@ mod tests {
     #[should_panic(expected = "source slice is too large (src:1000000, dst:999998)")]
     fn memcpy_panic_test() {
         let size = 1_000_000;
-        let mut data = AlignedBoxWithSlice::<f32>::new(size-2, 32).unwrap();
+        let mut data = AlignedBoxWithSlice::<f32>::new(size - 2, 32).unwrap();
         let mut destination = AlignedBoxWithSlice::<f32>::new(size, 32).unwrap();
         let mut_destination = destination.as_mut_slice();
         data.memcpy(mut_destination).unwrap();
@@ -275,8 +287,8 @@ mod tests {
 
     #[test]
     fn is_aligned_test() {
-        assert!(is_aligned(256,256));
-        assert!(!is_aligned(255,256));
+        assert!(is_aligned(256, 256));
+        assert!(!is_aligned(255, 256));
     }
 
     #[test]
@@ -284,7 +296,9 @@ mod tests {
         let size = 10;
         let slice_len = 2;
         let mut data = AlignedBoxWithSlice::<f32>::new(size, 32).unwrap();
-        let slices = data.split_into_nonoverlapping_mut_slices(2..8, slice_len).unwrap();
+        let slices = data
+            .split_into_nonoverlapping_mut_slices(2..8, slice_len)
+            .unwrap();
         assert_eq!(slices.len(), 3);
         for (i, slice) in slices.into_iter().enumerate() {
             assert_eq!(slice.len(), slice_len);
@@ -311,4 +325,3 @@ mod tests {
         assert!(result.is_err_and(|e| e.to_string() == expected_err_str));
     }
 }
-

@@ -2,7 +2,9 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT license.
  */
-use crate::l2_float_distance::{distance_cosine_vector_f32, distance_l2_vector_f16, distance_l2_vector_f32};
+use crate::l2_float_distance::{
+    distance_cosine_vector_f32, distance_l2_vector_f16, distance_l2_vector_f32,
+};
 use crate::{Half, Metric};
 
 /// Distance contract for full-precision vertex
