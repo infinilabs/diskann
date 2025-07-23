@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 use diskann::{
     common::ANNResult,
-    index::{ANNInmemIndex, create_inmem_index, INIT_WARMUP_DATA_LEN},
+    index::{ANNInmemIndex, INIT_WARMUP_DATA_LEN, create_inmem_index},
     model::{
         IndexConfiguration,
         configuration::index_write_parameters::IndexWriteParametersBuilder,
@@ -54,7 +54,7 @@ where
         search_list_size: u32,
         alpha: f32,
         num_threads: u32,
-        max_point: usize
+        max_point: usize,
     ) -> ANNResult<Self> {
         let index_write_parameters = IndexWriteParametersBuilder::new(search_list_size, max_degree)
             .with_alpha(alpha)
@@ -79,9 +79,9 @@ where
 
         let mut create_points = vec![vec![T::default(); dimension]; 5];
 
-        for i in 0..INIT_WARMUP_DATA_LEN as usize{
+        for i in 0..INIT_WARMUP_DATA_LEN as usize {
             for j in 0..dimension {
-                create_points[i][j] = ((i+j) as f32).into();
+                create_points[i][j] = ((i + j) as f32).into();
             }
         }
 

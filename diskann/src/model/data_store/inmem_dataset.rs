@@ -64,7 +64,11 @@ where
     }
 
     /// Build the dataset from file
-    pub fn build_from_file_with_enhance(&mut self, filename: &str, num_points_to_load: usize) -> ANNResult<()> {
+    pub fn build_from_file_with_enhance(
+        &mut self,
+        filename: &str,
+        num_points_to_load: usize,
+    ) -> ANNResult<()> {
         println!(
             "Loading {} vectors from file {} into dataset...",
             num_points_to_load, filename
@@ -175,7 +179,10 @@ where
         self.num_points += num_points_to_append;
 
         println!("Dataset appended.");
-        Ok((pts_offset - INIT_WARMUP_DATA_LEN as usize, num_points_to_append))
+        Ok((
+            pts_offset - INIT_WARMUP_DATA_LEN as usize,
+            num_points_to_append,
+        ))
     }
 
     /// Get vertex by id

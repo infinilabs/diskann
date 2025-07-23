@@ -7,7 +7,9 @@ use std::{io, ptr};
 
 use winapi::um::fileapi::OPEN_EXISTING;
 use winapi::um::winbase::{FILE_FLAG_NO_BUFFERING, FILE_FLAG_OVERLAPPED, FILE_FLAG_RANDOM_ACCESS};
-use winapi::um::winnt::{FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE, GENERIC_READ, GENERIC_WRITE};
+use winapi::um::winnt::{
+    FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE, GENERIC_READ, GENERIC_WRITE,
+};
 
 use winapi::{
     shared::minwindef::DWORD,
@@ -40,10 +42,10 @@ pub enum AccessMode {
 
 /// `ShareMode` determines how a file can be shared.
 ///
-/// These modes are used when creating or opening a file to decide what operations other 
+/// These modes are used when creating or opening a file to decide what operations other
 /// opening instances of the file can perform on it.
 /// # Variants
-/// - `None`: Prevents other processes from opening a file if they request delete, 
+/// - `None`: Prevents other processes from opening a file if they request delete,
 ///   read, or write access.
 ///
 /// - `Read`: Allows subsequent open operations on the same file to request read access.

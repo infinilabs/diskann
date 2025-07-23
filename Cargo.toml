@@ -12,7 +12,7 @@ members = [
   "cmd_drivers/build_and_insert_delete_memory_index",
   "vector",
   "diskann",
-  #"platform",
+  "platform",
   "logger",
   "vector_base64"
 , "api_memory_insert_query"]

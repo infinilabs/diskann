@@ -8,15 +8,19 @@
 
 use vector::FullPrecisionDistance;
 
-use crate::model::{vertex::{DIM_104, DIM_128, DIM_256, DIM_512}, IndexConfiguration};
-use crate::common::{ANNResult, ANNError};
+use crate::common::{ANNError, ANNResult};
+use crate::model::{
+    vertex::{DIM_104, DIM_128, DIM_256, DIM_512},
+    IndexConfiguration,
+};
 
 use super::InmemIndex;
 
 /// ANN inmem-index abstraction for custom <T, N>
-pub trait ANNInmemIndex<T> : Sync + Send
-where T : Default + Copy + Sync + Send + Into<f32>
- {
+pub trait ANNInmemIndex<T>: Sync + Send
+where
+    T: Default + Copy + Sync + Send + Into<f32>,
+{
     /// Build index
     fn build(&mut self, filename: &str, num_points_to_load: usize) -> ANNResult<()>;
 
@@ -37,17 +41,36 @@ where T : Default + Copy + Sync + Send + Into<f32>
     fn insert_vector(&mut self, points: &Vec<Vec<T>>) -> ANNResult<(usize, usize)>;
 
     /// Search the index for K nearest neighbors of query using given L value, for benchmarking purposes
-    fn search(&self, query : &[T], k_value : usize, l_value : u32, indices : &mut[u32]) -> ANNResult<u32>;
+    fn search(
+        &self,
+        query: &[T],
+        k_value: usize,
+        l_value: u32,
+        indices: &mut [u32],
+    ) -> ANNResult<u32>;
 
     /// Search the index for K nearest neighbors of query using given L value, for benchmarking purposes
-    fn search_with_distance(&self, query : &[T], k_value : usize, l_value : u32, indices : &mut[u32], distances: &mut[f32]) -> ANNResult<u32>;
+    fn search_with_distance(
+        &self,
+        query: &[T],
+        k_value: usize,
+        l_value: u32,
+        indices: &mut [u32],
+        distances: &mut [f32],
+    ) -> ANNResult<u32>;
 
     /// Soft deletes the nodes with the ids in the given array.
-    fn soft_delete(&mut self, vertex_ids_to_delete: Vec<u32>,  num_points_to_delete: usize) -> ANNResult<()>;
+    fn soft_delete(
+        &mut self,
+        vertex_ids_to_delete: Vec<u32>,
+        num_points_to_delete: usize,
+    ) -> ANNResult<()>;
 }
 
 /// Create Index<T, N> based on configuration
-pub fn create_inmem_index<'a, T>(config: IndexConfiguration) -> ANNResult<Box<dyn ANNInmemIndex<T> + 'a>> 
+pub fn create_inmem_index<'a, T>(
+    config: IndexConfiguration,
+) -> ANNResult<Box<dyn ANNInmemIndex<T> + 'a>>
 where
     T: Default + Copy + Sync + Send + Into<f32> + 'a,
     [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
@@ -59,20 +82,23 @@ where
         DIM_104 => {
             let index = Box::new(InmemIndex::<T, DIM_104>::new(config)?);
             Ok(index as Box<dyn ANNInmemIndex<T>>)
-        },
+        }
         DIM_128 => {
             let index = Box::new(InmemIndex::<T, DIM_128>::new(config)?);
             Ok(index as Box<dyn ANNInmemIndex<T>>)
-        },
+        }
         DIM_256 => {
             let index = Box::new(InmemIndex::<T, DIM_256>::new(config)?);
             Ok(index as Box<dyn ANNInmemIndex<T>>)
-        },
+        }
         DIM_512 => {
             let index = Box::new(InmemIndex::<T, DIM_512>::new(config)?);
             Ok(index as Box<dyn ANNInmemIndex<T>>)
-        },
-        _ => Err(ANNError::log_index_error(format!("Invalid dimension: {}", config.aligned_dim))),
+        }
+        _ => Err(ANNError::log_index_error(format!(
+            "Invalid dimension: {}",
+            config.aligned_dim
+        ))),
     }
 }
 

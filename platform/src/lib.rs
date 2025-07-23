@@ -7,14 +7,20 @@
     warn(clippy::panic, clippy::unwrap_used, clippy::expect_used)
 )]
 
-pub mod perf;
-pub use perf::{get_process_cycle_time, get_process_handle};
+cfg_if::cfg_if! {
+    if #[cfg(target_os = "windows")] {
+        pub mod perf;
+        pub use perf::{get_process_cycle_time, get_process_handle};
 
-pub mod file_io;
-pub use file_io::{get_queued_completion_status, read_file_to_slice};
+        pub mod file_io;
+        pub use file_io::{get_queued_completion_status, read_file_to_slice};
 
-pub mod file_handle;
-pub use file_handle::FileHandle;
+        pub mod file_handle;
+        pub use file_handle::FileHandle;
 
-pub mod io_completion_port;
-pub use io_completion_port::IOCompletionPort;
+        pub mod io_completion_port;
+        pub use io_completion_port::IOCompletionPort;
+    } else {
+
+    }
+}
