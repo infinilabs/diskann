@@ -25,3 +25,5 @@ pub mod instrumentation;
 
 #[cfg(test)]
 pub mod test_utils;
+
+pub mod disk_search;
