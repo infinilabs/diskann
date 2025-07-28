@@ -31,8 +31,7 @@ use crate::index::{ANNInmemIndex, InmemIndex};
 use crate::instrumentation::DiskIndexBuildLogger;
 use crate::model::configuration::DiskIndexBuildParameters;
 use crate::model::{
-    generate_quantized_data, IndexConfiguration, GRAPH_SLACK_FACTOR, MAX_PQ_CHUNKS,
-    MAX_PQ_TRAINING_SET_SIZE,
+    generate_quantized_data, IndexConfiguration, WindowsAlignedFileReader, GRAPH_SLACK_FACTOR, MAX_PQ_CHUNKS, MAX_PQ_TRAINING_SET_SIZE
 };
 use crate::storage::DiskIndexStorage;
 use crate::utils::{convert_types_u64_u32, file_exists, set_rayon_num_threads};
@@ -142,8 +141,6 @@ where
             )
         })
     }
-    /* disk part
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // load_aligned_bin functions START
 
@@ -188,16 +185,14 @@ where
             calc_recall_flag = true;
         }
 
-        //std::shared_ptr<AlignedFileReader> reader = nullptr;
-        cfg_if! {
-            let reader: AlignedFileReader = if #[cfg(target_os = "windows")] {
-                reader.reset(new WindowsAlignedFileReader())
-            } else {
-                reader.reset(new LinuxAlignedFileReader())
-            };
-        };
+        // TODO: check if index_path_prefix can be the right path for .ann (instead of a separate parameter)
+        #[cfg(target_os = "windows")]
+        let reader = WindowsAlignedFileReader::new(index_path_prefix)?; // as AlignedFileReader;
 
-        //std::unique_ptr<diskann::PQFlashIndex<T, LabelT>> _pFlashIndex(new diskann::PQFlashIndex<T, LabelT>(reader, metric));
+        #[cfg(target_os = "linux")]
+        let reader = LinuxAlignedFileReader::new(index_path_prefix)?; // as AlignedFileReader;
+
+        std::unique_ptr<diskann::PQFlashIndex<T, LabelT>> _pFlashIndex(new diskann::PQFlashIndex<T, LabelT>(reader, metric));
         let _pFlashIndex: PQFlashIndex<T, LabelT> = PQFlashIndex::new();
 
         let res = _pFlashIndex.load(num_threads, index_path_prefix.c_str());
@@ -346,7 +341,6 @@ where
 
         Ok(if best_recall >= fail_if_recall_below {0} else{-1})
     }
-    */
 }
 
 impl<T, const N: usize> ANNDiskIndex<T> for DiskIndex<T, N>

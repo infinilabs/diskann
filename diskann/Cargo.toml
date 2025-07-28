@@ -8,7 +8,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["default_feature"]
+default = ["default_feature", "disk_store"]
 
 # optional features
 default_feature = []    # no any dependency
@@ -50,6 +50,10 @@ winapi = { version = "0.3.9", features = [
     "basetsd",
     "winerror",
     "winbase",
+] }
+
+windows = { version = "0.61.3", features = [
+    "Win32_System_IO",
 ] }
 
 [build-dependencies]

@@ -7,5 +7,12 @@ mod disk_index;
 pub use disk_index::DiskIndex;
 
 pub mod ann_disk_index;
-// pub mod utils;
-// pub mod percentile_stats;
+pub mod utils;
+pub mod percentile_stats;
+
+pub mod aligned_file_reader;
+
+pub mod pq_flash_index;
+
+#[cfg(target_os = "linux")]
+pub mod linux_aligned_file_reader;
