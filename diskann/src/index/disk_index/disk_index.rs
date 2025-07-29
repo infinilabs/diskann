@@ -25,6 +25,7 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use vector::{FullPrecisionDistance, Metric};
 
 use crate::common::{ANNError, ANNResult, AlignedBoxWithSlice};
+use crate::disk_search::PQFlashIndex;
 //use crate::index::percentile_stats::{get_mean_stats, get_percentile_stats, QueryStats};
 //use crate::index::utils::{calculate_recall, load_aligned_bin, load_truthset};
 use crate::index::{ANNInmemIndex, InmemIndex};
@@ -192,18 +193,17 @@ where
         #[cfg(target_os = "linux")]
         let reader = LinuxAlignedFileReader::new(index_path_prefix)?; // as AlignedFileReader;
 
-        std::unique_ptr<diskann::PQFlashIndex<T, LabelT>> _pFlashIndex(new diskann::PQFlashIndex<T, LabelT>(reader, metric));
-        let _pFlashIndex: PQFlashIndex<T, LabelT> = PQFlashIndex::new();
-
+        let _pFlashIndex: PQFlashIndex<T, LabelT> = PQFlashIndex::new(reader, metric);
         let res = _pFlashIndex.load(num_threads, index_path_prefix.c_str());
 
         if (res != 0) {
             return res;
         }
 
-        std::vector<uint32_t> node_list;
-        diskann::cout << "Caching " << num_nodes_to_cache << " nodes around medoid(s)" << std::endl;
-        _pFlashIndex.cache_bfs_levels(num_nodes_to_cache, node_list);
+        let mut node_list: Vec<u32> = vec![];
+
+        // Caching num_nodes_to_cache nodes around medoid(s)
+        _pFlashIndex.cache_bfs_levels(num_nodes_to_cache, &mut node_list, false);
         // if (num_nodes_to_cache > 0)
         //     _pFlashIndex->generate_cache_list_from_sample_queries(warmup_query_file, 15, 6, num_nodes_to_cache,
         //     num_threads, node_list);

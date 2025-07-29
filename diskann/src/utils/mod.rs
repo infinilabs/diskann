@@ -43,3 +43,6 @@ pub use math_util::*;
 
 pub mod kmeans;
 pub use kmeans::*;
+
+pub mod type_util;
+pub use type_util::*;

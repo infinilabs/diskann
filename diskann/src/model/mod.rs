@@ -28,14 +28,14 @@ cfg_if! {
         pub mod pq;
         pub use pq::*;
 
-        cfg_if! {
-            if #[cfg(target_os = "windows")] {
-                pub mod windows_aligned_file_reader;
-                pub use windows_aligned_file_reader::*;
-            } else {
-                //pub mod linux_aligned_file_reader;
-                //pub use linux_aligned_file_reader::*;
-            }
-        }
+        #[cfg(target_os = "linux")]
+        pub mod linux_aligned_file_reader;
+        #[cfg(target_os = "linux")]
+        pub use linux_aligned_file_reader::*;
+
+        #[cfg(target_os = "windows")]
+        pub mod windows_aligned_file_reader;
+        #[cfg(target_os = "windows")]
+        pub use windows_aligned_file_reader::*;
     }
 }
