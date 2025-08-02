@@ -1,3 +1,11 @@
 # 在项目根目录创建 `.cargo/config.toml` 文件，并写入：
 [build]
-rustflags = ["-C", "target-feature=+avx2"]
+# rustflags = ["-C", "target-feature=+avx2"]
+# Commented out AVX2 requirement for macOS compatibility
+
+# Alternative: Conditional AVX2 support (uncomment if you want AVX2 on supported systems)
+# [target.x86_64-unknown-linux-gnu]
+# rustflags = ["-C", "target-feature=+avx2"]
+# 
+# [target.x86_64-pc-windows-msvc]
+# rustflags = ["-C", "target-feature=+avx2"]
