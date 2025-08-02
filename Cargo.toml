@@ -3,19 +3,26 @@
 
 [workspace]
 members = [
-  "cmd_drivers/build_memory_index",
-  "cmd_drivers/build_and_insert_memory_index",
-  "cmd_drivers/load_and_insert_memory_index",
-  "cmd_drivers/convert_f32_to_bf16",
-  "cmd_drivers/search_memory_index",
-  #"cmd_drivers/build_disk_index",
-  "cmd_drivers/build_and_insert_delete_memory_index",
+  "examples/cmd_drivers/build_memory_index",
+  "examples/cmd_drivers/build_and_insert_memory_index",
+  "examples/cmd_drivers/load_and_insert_memory_index",
+  "examples/cmd_drivers/convert_f32_to_bf16",
+  "examples/cmd_drivers/search_memory_index",
+  #"examples/cmd_drivers/build_disk_index",
+  "examples/cmd_drivers/build_and_insert_delete_memory_index",
   "vector",
   "diskann",
   "platform",
-  "logger",
-  "vector_base64"
-, "api_memory_insert_query"]
+  "vector_base64",
+  "examples/vector-search-demo/vector-search-demo",
+  "examples/dataset-generators/generate_large_dataset",
+  "examples/cmd_drivers/build_memory_index",
+  "examples/cmd_drivers/build_and_insert_memory_index",
+  "examples/cmd_drivers/load_and_insert_memory_index",
+  "examples/cmd_drivers/convert_f32_to_bf16",
+  "examples/cmd_drivers/search_memory_index",
+  "examples/cmd_drivers/build_and_insert_delete_memory_index"
+]
 resolver = "2"
 
 [profile.release]

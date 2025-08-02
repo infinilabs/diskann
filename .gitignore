@@ -1,3 +1,107 @@
-target
-api_memory_insert_query/output
-.idea
+# Rust build artifacts
+target/
+**/target/
+Cargo.lock
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Generated test data and outputs
+examples/vector-search-demo/output/
+examples/*/output/
+test_output/
+temp/
+tmp/
+*.tmp
+
+# Data files and embeddings
+*.json
+*.bin
+*.fbin
+*.index
+*.data
+large_embeddings.json
+embeddings.json
+saved_vector_file*
+
+# Log files
+*.log
+logs/
+log/
+
+# Performance and profiling data
+*.perf
+*.prof
+*.trace
+
+# Documentation build artifacts
+docs/_build/
+docs/build/
+
+# Coverage reports
+*.profraw
+coverage/
+*.gcov
+
+# Temporary files
+*.bak
+*.backup
+*.orig
+*.rej
+
+# Platform-specific files
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+
+# Debug files
+*.pdb
+*.dbg
+
+# Test artifacts
+test_results/
+benchmark_results/
+*.test
+*.bench
+
+# Large dataset files (common patterns)
+*.h5
+*.hdf5
+*.parquet
+*.csv
+*.tsv
+*.txt
+!README.txt
+!LICENSE.txt
+
+# Docker and container files
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Backup files
+*.old
+*.save
+
+cleaned_images
+api_memory_insert_query/test/input

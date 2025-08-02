@@ -1,0 +1,22 @@
+# Test artifacts and generated data
+data/generated/
+data/temp/
+*.test
+*.bench
+
+# Test output files
+test_output/
+benchmark_results/
+*.perf
+*.prof
+
+# Temporary test files
+temp_*.bin
+test_*.txt
+*.tmp
+
+# Keep important test data
+!data/siftsmall_learn.bin
+!data/delete_set_50pts.bin
+!data/disk_index_*.index
+!data/truth_*.index 

@@ -5,7 +5,7 @@ use std::sync::Arc;
 #[cfg(target_os = "linux")]
 use std::os::linux::fs::MetadataExt;
 
-use logger::logger::indexlog::DiskIndexConstructionCheckpoint;
+use crate::instrumentation::DiskIndexConstructionCheckpoint;
 use rand::distributions::Uniform;
 use rand::rngs::StdRng;
 use rand::SeedableRng;

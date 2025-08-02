@@ -31,9 +31,14 @@ serde = { version = "1.0.130", features = ["derive"] }
 thiserror = "1.0.40"
 tsl = "1.0.3"
 
-logger = { path = "../logger" }
 platform = { path = "../platform" }
 vector = { path = "../vector" }
+
+# Tracing ecosystem for logging and instrumentation
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "chrono"] }
+tracing-appender = "0.2"
+serde_json = "1.0"
 
 cfg-if = "1.0.1"
 libc = "1.0.0-alpha.1"

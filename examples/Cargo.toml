@@ -1,0 +1,28 @@
+[package]
+name = "diskann-examples"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+diskann = { path = "../diskann" }
+vector = { path = "../vector" }
+rayon = "1.8"
+rand = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[[example]]
+name = "basic_usage"
+path = "basic_usage.rs"
+
+[[example]]
+name = "disk_index"
+path = "disk_index.rs"
+
+[[example]]
+name = "batch_operations"
+path = "batch_operations.rs"
+
+[[example]]
+name = "custom_metrics"
+path = "custom_metrics.rs" 

@@ -21,6 +21,18 @@ cfg_if::cfg_if! {
         pub mod io_completion_port;
         pub use io_completion_port::IOCompletionPort;
     } else {
+        // For non-Windows platforms, we'll use simplified implementations
+        // In a production environment, you would implement platform-specific optimizations
+        pub mod perf_generic;
+        pub use perf_generic::{get_process_cycle_time, get_process_handle};
 
+        pub mod file_io_generic;
+        pub use file_io_generic::{read_file_to_slice, get_io_completion_status};
+
+        pub mod file_handle_generic;
+        pub use file_handle_generic::FileHandle;
+
+        pub mod io_completion_port_generic;
+        pub use io_completion_port_generic::IOCompletionPort;
     }
 }

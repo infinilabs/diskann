@@ -7,8 +7,7 @@ use std::array::TryFromSliceError;
 use std::io;
 use std::num::TryFromIntError;
 
-use logger::error_logger::log_error;
-use logger::log_error::LogError;
+use tracing::error;
 
 /// Result
 pub type ANNResult<T> = Result<T, ANNError>;
@@ -57,10 +56,7 @@ pub enum ANNError {
 
     /// Logging error
     #[error("LogError: {err}")]
-    LogError {
-        #[from]
-        err: LogError,
-    },
+    LogError { err: String },
 
     // PQ construction error
     // Error happened when we construct PQ pivot or PQ compressed table
@@ -86,91 +82,73 @@ impl ANNError {
     /// Create, log and return IndexError
     #[inline]
     pub fn log_index_error(err: String) -> Self {
-        let ann_err = ANNError::IndexError { err };
-        match log_error(ann_err.to_string()) {
-            Ok(()) => ann_err,
-            Err(log_err) => ANNError::LogError { err: log_err },
-        }
+        let ann_err = ANNError::IndexError { err: err.clone() };
+        error!("IndexError: {}", err);
+        ann_err
     }
 
     /// Create, log and return IndexConfigError
     #[inline]
     pub fn log_index_config_error(parameter: String, err: String) -> Self {
-        let ann_err = ANNError::IndexConfigError { parameter, err };
-        match log_error(ann_err.to_string()) {
-            Ok(()) => ann_err,
-            Err(log_err) => ANNError::LogError { err: log_err },
-        }
+        let ann_err = ANNError::IndexConfigError { parameter: parameter.clone(), err: err.clone() };
+        error!("IndexConfigError: {} is invalid, err={}", parameter, err);
+        ann_err
     }
 
     /// Create, log and return TryFromIntError
     #[inline]
     pub fn log_try_from_int_error(err: TryFromIntError) -> Self {
         let ann_err = ANNError::TryFromIntError { err };
-        match log_error(ann_err.to_string()) {
-            Ok(()) => ann_err,
-            Err(log_err) => ANNError::LogError { err: log_err },
-        }
+        error!("TryFromIntError: {}", ann_err);
+        ann_err
     }
 
     /// Create, log and return IOError
     #[inline]
     pub fn log_io_error(err: io::Error) -> Self {
         let ann_err = ANNError::IOError { err };
-        match log_error(ann_err.to_string()) {
-            Ok(()) => ann_err,
-            Err(log_err) => ANNError::LogError { err: log_err },
-        }
+        error!("IOError: {}", ann_err);
+        ann_err
     }
 
     /// Create, log and return DiskIOAlignmentError
-    /// #[inline]
+    #[inline]
     pub fn log_disk_io_request_alignment_error(err: String) -> Self {
-        let ann_err: ANNError = ANNError::DiskIOAlignmentError { err };
-        match log_error(ann_err.to_string()) {
-            Ok(()) => ann_err,
-            Err(log_err) => ANNError::LogError { err: log_err },
-        }
+        let ann_err = ANNError::DiskIOAlignmentError { err: err.clone() };
+        error!("DiskIOAlignmentError: {}", err);
+        ann_err
     }
 
-    /// Create, log and return IOError
+    /// Create, log and return MemoryAllocLayoutError
     #[inline]
     pub fn log_mem_alloc_layout_error(err: LayoutError) -> Self {
         let ann_err = ANNError::MemoryAllocLayoutError { err };
-        match log_error(ann_err.to_string()) {
-            Ok(()) => ann_err,
-            Err(log_err) => ANNError::LogError { err: log_err },
-        }
+        error!("MemoryAllocLayoutError: {}", ann_err);
+        ann_err
     }
 
     /// Create, log and return LockPoisonError
     #[inline]
     pub fn log_lock_poison_error(err: String) -> Self {
-        let ann_err = ANNError::LockPoisonError { err };
-        match log_error(ann_err.to_string()) {
-            Ok(()) => ann_err,
-            Err(log_err) => ANNError::LogError { err: log_err },
-        }
+        let ann_err = ANNError::LockPoisonError { err: err.clone() };
+        error!("LockPoisonError: {}", err);
+        ann_err
     }
 
     /// Create, log and return PQError
     #[inline]
     pub fn log_pq_error(err: String) -> Self {
-        let ann_err = ANNError::PQError { err };
-        match log_error(ann_err.to_string()) {
-            Ok(()) => ann_err,
-            Err(log_err) => ANNError::LogError { err: log_err },
-        }
+        let ann_err = ANNError::PQError { err: err.clone() };
+        error!("PQError: {}", err);
+        ann_err
     }
 
     /// Create, log and return TryFromSliceError
     #[inline]
     pub fn log_try_from_slice_error(err: TryFromSliceError) -> Self {
         let ann_err = ANNError::TryFromSliceError { err };
-        match log_error(ann_err.to_string()) {
-            Ok(()) => ann_err,
-            Err(log_err) => ANNError::LogError { err: log_err },
-        }
+        error!("TryFromSliceError: {}", ann_err);
+        ann_err
     }
 }
 

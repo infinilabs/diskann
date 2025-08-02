@@ -1,0 +1,45 @@
+# Generated outputs and test results
+output/
+results/
+temp/
+tmp/
+
+# Generated datasets
+*.json
+*.bin
+*.fbin
+*.index
+*.data
+large_embeddings.json
+embeddings.json
+saved_vector_file*
+
+# Performance test results
+benchmark_results/
+performance_logs/
+*.perf
+*.prof
+
+# Temporary test files
+test_*.txt
+temp_*.bin
+*.tmp
+
+# Log files
+*.log
+logs/
+
+# HTML reports
+*.html
+relations.html
+
+# Large dataset files
+*.h5
+*.hdf5
+*.parquet
+*.csv
+*.tsv
+
+# Keep important documentation
+!README.md
+!LICENSE.txt 
