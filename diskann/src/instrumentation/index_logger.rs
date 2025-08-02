@@ -33,7 +33,7 @@ impl IndexLogger {
             let mut log = Log::default();
             let index_construction_log = IndexConstructionLog {
                 percentage_complete: (100_f32 * count as f32) / (self.range as f32),
-                time_spent_in_seconds: self.timer.elapsed().as_secs_f32(),
+                time_spent_in_seconds: self.timer.elapsed().unwrap_or_default().as_secs_f32(),
                 g_cycles_spent: self.timer.elapsed_gcycles(),
                 log_level: LogLevel::Info as i32,
             };

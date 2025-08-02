@@ -1,5 +1,17 @@
 use crate::model::IOContext;
 
+pub struct AlignedRead {
+    pub offset: usize,
+    pub len: usize,
+    pub buf: *mut u8,
+}
+
+impl AlignedRead {
+    pub fn new(offset: usize, len: usize, buf: *mut u8) -> Self {
+        Self { offset, len, buf }
+    }
+}
+
 pub trait AlignedFileReader {
     // Returns the thread-specific context
     // Returns (io_context_t)(-1) if thread is not registered

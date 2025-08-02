@@ -6,10 +6,6 @@
 
 //! Aligned allocator
 
-extern crate cblas;
-extern crate openblas_src;
-
-use cblas::{sgemm, snrm2, Layout, Transpose};
 use rayon::prelude::*;
 use std::{
     cmp::{min, Ordering},
@@ -18,6 +14,90 @@ use std::{
 };
 
 use crate::common::{ANNError, ANNResult};
+
+// Pure Rust implementation of BLAS-like functions
+#[cfg(target_arch = "x86_64")]
+use std::arch::x86_64::*;
+
+/// Compute L2 norm of a vector using SIMD optimizations
+#[inline]
+fn l2_norm_simd(data: &[f32]) -> f32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        unsafe {
+            let mut sum = _mm256_setzero_ps();
+            let len = data.len();
+            let aligned_len = len - (len % 8);
+
+            // Process 8 elements at a time
+            for i in (0..aligned_len).step_by(8) {
+                let vec = _mm256_loadu_ps(&data[i]);
+                sum = _mm256_fmadd_ps(vec, vec, sum);
+            }
+
+            // Horizontal sum
+            let x128: __m128 =
+                _mm_add_ps(_mm256_extractf128_ps(sum, 1), _mm256_castps256_ps128(sum));
+            let x64: __m128 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));
+            let x32: __m128 = _mm_add_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
+            let mut result = _mm_cvtss_f32(x32);
+
+            // Handle remaining elements
+            for i in aligned_len..len {
+                result += data[i] * data[i];
+            }
+
+            result.sqrt()
+        }
+    }
+
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        // Scalar fallback
+        data.iter().map(|&x| x * x).sum::<f32>().sqrt()
+    }
+}
+
+/// Matrix multiplication C = alpha * A * B + beta * C
+#[inline]
+fn matrix_multiply(
+    m: usize,
+    n: usize,
+    k: usize,
+    alpha: f32,
+    a: &[f32],
+    lda: usize,
+    b: &[f32],
+    ldb: usize,
+    beta: f32,
+    c: &mut [f32],
+    ldc: usize,
+) {
+    // Initialize C with beta * C
+    if beta != 0.0 {
+        for i in 0..m {
+            for j in 0..n {
+                c[i * ldc + j] *= beta;
+            }
+        }
+    } else {
+        for i in 0..m {
+            for j in 0..n {
+                c[i * ldc + j] = 0.0;
+            }
+        }
+    }
+
+    // Compute C += alpha * A * B
+    for i in 0..m {
+        for k_idx in 0..k {
+            let a_ik = alpha * a[i * lda + k_idx];
+            for j in 0..n {
+                c[i * ldc + j] += a_ik * b[k_idx * ldb + j];
+            }
+        }
+    }
+}
 
 struct PivotContainer {
     piv_id: usize,
@@ -66,7 +146,7 @@ pub fn compute_vecs_l2sq(vecs_l2sq: &mut [f32], data: &[f32], num_points: usize,
         .enumerate()
         .for_each(|(n_iter, vec_l2sq)| {
             let slice = &data[n_iter * dim..(n_iter + 1) * dim];
-            let norm = unsafe { snrm2(dim as i32, slice, 1) };
+            let norm = l2_norm_simd(slice);
             *vec_l2sq = norm * norm;
         });
 }
@@ -99,113 +179,60 @@ pub fn compute_closest_centers_in_block(
         )));
     }
 
-    let ones_a: Vec<f32> = vec![1.0; num_centers];
-    let ones_b: Vec<f32> = vec![1.0; num_points];
+    // Compute distance matrix using matrix multiplication
+    // dist_matrix[i][j] = ||data[i] - centers[j]||^2 = ||data[i]||^2 + ||centers[j]||^2 - 2 * data[i] * centers[j]
 
-    unsafe {
-        sgemm(
-            Layout::RowMajor,
-            Transpose::None,
-            Transpose::Ordinary,
-            num_points as i32,
-            num_centers as i32,
-            1,
-            1.0,
-            docs_l2sq,
-            1,
-            &ones_a,
-            1,
-            0.0,
-            dist_matrix,
-            num_centers as i32,
-        );
+    // First, compute -2 * data * centers^T
+    matrix_multiply(
+        num_points,
+        num_centers,
+        dim,
+        -2.0,
+        data,
+        dim,
+        centers,
+        dim,
+        0.0,
+        dist_matrix,
+        num_centers,
+    );
+
+    // Add ||data[i]||^2 + ||centers[j]||^2
+    for i in 0..num_points {
+        for j in 0..num_centers {
+            dist_matrix[i * num_centers + j] += docs_l2sq[i] + centers_l2sq[j];
+        }
     }
 
-    unsafe {
-        sgemm(
-            Layout::RowMajor,
-            Transpose::None,
-            Transpose::Ordinary,
-            num_points as i32,
-            num_centers as i32,
-            1,
-            1.0,
-            &ones_b,
-            1,
-            centers_l2sq,
-            1,
-            1.0,
-            dist_matrix,
-            num_centers as i32,
-        );
-    }
+    // Find k closest centers for each point
+    for i in 0..num_points {
+        let mut heap = BinaryHeap::new();
+        let start_idx = i * num_centers;
 
-    unsafe {
-        sgemm(
-            Layout::RowMajor,
-            Transpose::None,
-            Transpose::Ordinary,
-            num_points as i32,
-            num_centers as i32,
-            dim as i32,
-            -2.0,
-            data,
-            dim as i32,
-            centers,
-            dim as i32,
-            1.0,
-            dist_matrix,
-            num_centers as i32,
-        );
-    }
-
-    if k == 1 {
-        center_index
-            .par_iter_mut()
-            .enumerate()
-            .for_each(|(i, center_idx)| {
-                let mut min = f32::MAX;
-                let current = &dist_matrix[i * num_centers..(i + 1) * num_centers];
-                let mut min_idx = 0;
-                for (j, &distance) in current.iter().enumerate() {
-                    if distance < min {
-                        min = distance;
-                        min_idx = j;
-                    }
-                }
-                *center_idx = min_idx as u32;
+        for j in 0..num_centers {
+            let dist = dist_matrix[start_idx + j];
+            heap.push(PivotContainer {
+                piv_id: j,
+                piv_dist: dist,
             });
-    } else {
-        center_index
-            .par_chunks_mut(k)
-            .enumerate()
-            .for_each(|(i, center_chunk)| {
-                let current = &dist_matrix[i * num_centers..(i + 1) * num_centers];
-                let mut top_k_queue = BinaryHeap::new();
-                for (j, &distance) in current.iter().enumerate() {
-                    let this_piv = PivotContainer {
-                        piv_id: j,
-                        piv_dist: distance,
-                    };
-                    if top_k_queue.len() < k {
-                        top_k_queue.push(this_piv);
-                    } else {
-                        // Safe unwrap, top_k_queue is not empty
-                        #[allow(clippy::unwrap_used)]
-                        let mut top = top_k_queue.peek_mut().unwrap();
-                        if this_piv.piv_dist < top.piv_dist {
-                            *top = this_piv;
-                        }
-                    }
-                }
-                for (_j, center_idx) in center_chunk.iter_mut().enumerate() {
-                    if let Some(this_piv) = top_k_queue.pop() {
-                        *center_idx = this_piv.piv_id as u32;
-                    } else {
-                        break;
-                    }
-                }
-            });
+
+            // Keep only k closest
+            if heap.len() > k {
+                heap.pop();
+            }
+        }
+
+        // Extract k closest centers in reverse order
+        let mut closest = Vec::with_capacity(k);
+        while let Some(container) = heap.pop() {
+            closest.push(container.piv_id as u32);
+        }
+        closest.reverse();
+
+        // Copy to output
+        for (idx, &center_id) in closest.iter().enumerate() {
+            center_index[i * k + idx] = center_id;
+        }
     }
 
     Ok(())

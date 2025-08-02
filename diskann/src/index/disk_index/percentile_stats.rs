@@ -1,35 +1,29 @@
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd)]
 pub struct QueryStats {
-    pub total_us: f32, // total time to process query in micros
-    pub io_us: f32,    // total time spent in IO
-    pub cpu_us: f32,   // total time spent in CPU
-
-    n_4k: u32,         // # of 4kB reads
-    n_8k: u32,         // # of 8kB reads
-    n_12k: u32,        // # of 12kB reads
-    pub n_ios: u32,        // total # of IOs issued
-    read_size: u32,    // total # of bytes read
-    n_cmps_saved: u32, // # cmps saved
-    n_cmps: u32,       // # cmps
-    n_cache_hits: u32, // # cache_hits
-    n_hops: u32,       // # search hops
+    pub n_cache_hits: u32,
+    pub n_hops: u32,
+    pub n_4k: u32,
+    pub n_ios: u32,
+    pub io_us: f32,
+    pub n_cmps: u32,
+    pub cpu_us: f32,
+    pub total_us: f32,
 }
 
-#[inline]
-pub fn get_percentile_stats<T: Default>(
-    stats: &[QueryStats],
+pub fn get_percentile_stats<T: Default + Clone + PartialOrd + std::marker::Copy>(
+    data: &[T],
+    len: usize,
     percentile: f32,
-    member_fn: impl Fn(&QueryStats) -> T,
 ) -> T {
-    let len = stats.len();
-    let mut vals = vec![T::default(); len];
-
-    for i in 0..len {
-        vals[i] = member_fn(&stats[i]);
+    if data.is_empty() {
+        return T::default();
     }
 
-    vals.sort();
-    vals[percentile * len]
+    let mut sorted_data = data.to_vec();
+    sorted_data.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+
+    let index = ((percentile * len as f32) as usize).min(len - 1);
+    sorted_data[index]
 }
 
 #[inline]

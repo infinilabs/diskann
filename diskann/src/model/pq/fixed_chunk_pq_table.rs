@@ -8,7 +8,54 @@ use hashbrown::HashMap;
 use rayon::prelude::{
     IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator, ParallelSliceMut,
 };
+
+#[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::{_mm_prefetch, _MM_HINT_T0};
+
+#[cfg(not(target_arch = "x86_64"))]
+const _MM_HINT_T0: i32 = 0;
+
+#[cfg(target_arch = "x86_64")]
+pub fn prefetch_vector(ptr: *const u8) {
+    unsafe {
+        _mm_prefetch(ptr as *const i8, _MM_HINT_T0);
+    }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+pub fn prefetch_vector(_ptr: *const u8) {
+    // No-op for non-x86_64 architectures
+}
+
+#[cfg(target_arch = "x86_64")]
+pub fn prefetch_data(dists_out: &[f32], pq_ids: &[u32]) {
+    unsafe {
+        _mm_prefetch(dists_out.as_ptr() as *const i8, _MM_HINT_T0);
+        _mm_prefetch(pq_ids.as_ptr() as *const i8, _MM_HINT_T0);
+        _mm_prefetch(pq_ids.as_ptr().add(64) as *const i8, _MM_HINT_T0);
+        _mm_prefetch(pq_ids.as_ptr().add(128) as *const i8, _MM_HINT_T0);
+    }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+pub fn prefetch_data(_dists_out: &[f32], _pq_ids: &[u32]) {
+    // No-op for non-x86_64 architectures
+}
+
+#[cfg(target_arch = "x86_64")]
+pub fn prefetch_chunk_data(chunk_id: usize, pq_ids: &[u32]) {
+    unsafe {
+        _mm_prefetch(
+            pq_ids.as_ptr().add(chunk_id * 256) as *const i8,
+            _MM_HINT_T0,
+        );
+    }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+pub fn prefetch_chunk_data(_chunk_id: usize, _pq_ids: &[u32]) {
+    // No-op for non-x86_64 architectures
+}
 
 use crate::{
     common::{ANNError, ANNResult},
@@ -219,6 +266,7 @@ pub fn pq_dist_lookup(
     pq_dists: &[f32],
 ) -> Vec<f32> {
     let mut dists_out: Vec<f32> = vec![0.0; n_pts];
+    #[cfg(target_arch = "x86_64")]
     unsafe {
         _mm_prefetch(dists_out.as_ptr() as *const i8, _MM_HINT_T0);
         _mm_prefetch(pq_ids.as_ptr() as *const i8, _MM_HINT_T0);
@@ -228,6 +276,7 @@ pub fn pq_dist_lookup(
     for chunk in 0..pq_nchunks {
         let chunk_dists = &pq_dists[256 * chunk..];
         if chunk < pq_nchunks - 1 {
+            #[cfg(target_arch = "x86_64")]
             unsafe {
                 _mm_prefetch(
                     chunk_dists.as_ptr().offset(256 * chunk as isize).add(256) as *const i8,

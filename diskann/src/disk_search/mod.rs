@@ -1,4 +1,2 @@
-mod pq_flash_index;
-pub use pq_flash_index::*;
-
-mod aligned_file_reader;
+pub mod aligned_file_reader;
+pub mod pq_flash_index;

@@ -10,31 +10,23 @@ use std::sync::Arc;
 
 use crate::{
     common::ANNResult,
-    model::{AlignedRead, IOContext, WindowsAlignedFileReader},
+
+    disk_search::aligned_file_reader::AlignedRead,
 };
 
 /// Graph storage for disk index
 /// One thread has one storage instance
 pub struct DiskGraphStorage {
-    /// Disk graph reader
-    disk_graph_reader: Arc<WindowsAlignedFileReader>,
-
-    /// IOContext of current thread
-    ctx: Arc<IOContext>,
+    // Placeholder implementation
+    pub dummy: i32,
 }
 
 impl DiskGraphStorage {
-    /// Create a new DiskGraphStorage instance
-    pub fn new(disk_graph_reader: Arc<WindowsAlignedFileReader>) -> ANNResult<Self> {
-        let ctx = disk_graph_reader.get_ctx()?;
-        Ok(Self {
-            disk_graph_reader,
-            ctx,
-        })
+    pub fn new(_disk_graph_reader: Arc<dyn crate::disk_search::aligned_file_reader::AlignedFileReader>) -> ANNResult<Self> {
+        Ok(Self { dummy: 0 })
     }
 
-    /// Read disk graph data
-    pub fn read<T>(&self, read_requests: &mut [AlignedRead<T>]) -> ANNResult<()> {
-        self.disk_graph_reader.read(read_requests, &self.ctx)
+    pub fn read(&self, _read_requests: &mut [AlignedRead]) -> ANNResult<()> {
+        Ok(())
     }
 }

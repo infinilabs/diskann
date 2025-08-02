@@ -1,33 +1,34 @@
-// TODO: Caller code is very callous about copying IOContext objects
-// all over the place. MUST verify that it won't cause leaks/logical
-// errors.
-// Because of such callous copying, we have to use ptr->atomic instead
-// of atomic, as atomic is not copyable.
+use crate::model::IOContext;
 
-enum Status
-    {
-        READ_WAIT,
-        READ_SUCCESS,
-        READ_FAILED,
-        PROCESS_COMPLETE
+pub struct AlignedRead {
+    pub offset: usize,
+    pub len: usize,
+    pub buf: *mut u8,
+}
+
+impl AlignedRead {
+    pub fn new(offset: usize, len: usize, buf: *mut u8) -> Self {
+        Self { offset, len, buf }
     }
+}
 
-struct IOContext {
-    
-    std::shared_ptr<ANNIndex::IDiskPriorityIO> m_pDiskIO = nullptr;
-    std::shared_ptr<std::vector<ANNIndex::AsyncReadRequest>> m_pRequests;
-    std::shared_ptr<std::vector<Status>> m_pRequestsStatus;
+pub trait AlignedFileReader {
+    // Returns the thread-specific context
+    // Returns (io_context_t)(-1) if thread is not registered
+    fn get_ctx(&mut self) -> IOContext;
 
-    // waitonaddress on this memory to wait for IO completion signal
-    // reader should signal this memory after IO completion
-    // TODO: WindowsAlignedFileReader can be modified to take advantage of this
-    //   and can largely share code with the file reader for Bing.
-    mutable volatile long m_completeCount = 0;
+    // Register thread-id for a context
+    fn register_thread(&mut self);
+    // De-register thread-id for a context
+    fn deregister_thread(&mut self);
+    // De-register all threads
+    fn deregister_all_threads(&mut self);
 
-    IOContext()
-        : m_pRequestsStatus(new std::vector<Status>()), m_pRequests(new std::vector<ANNIndex::AsyncReadRequest>())
-    {
-        (*m_pRequestsStatus).reserve(MAX_IO_DEPTH);
-        (*m_pRequests).reserve(MAX_IO_DEPTH);
-    }
+    // Open file (blocking call)
+    fn open(&mut self, fname: &str);
+    // Close file (blocking call)
+    fn close(&mut self);
+
+    // Process batch of aligned requests in parallel (blocking call)
+    fn read(&mut self, read_reqs: &mut Vec<AlignedRead>, ctx: &mut IOContext);
 }

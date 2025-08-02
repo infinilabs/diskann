@@ -34,7 +34,7 @@ impl DiskIndexBuildLogger {
         let mut log = Log::default();
         let disk_index_construction_log = DiskIndexConstructionLog {
             checkpoint: self.checkpoint as i32,
-            time_spent_in_seconds: self.timer.elapsed().as_secs_f32(),
+            time_spent_in_seconds: self.timer.elapsed().unwrap_or_default().as_secs_f32(),
             g_cycles_spent: self.timer.elapsed_gcycles(),
             log_level: LogLevel::Info as i32,
         };

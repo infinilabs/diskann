@@ -20,7 +20,13 @@ pub enum LogError {
     #[error("LockPoisonError: {err}")]
     LockPoisonError { err: String },
 
-    /// Failed to create EtwPublisher
+    /// Failed to create EtwPublisher (Windows only)
+    #[cfg(target_os = "windows")]
     #[error("EtwProviderError: {err:?}")]
     ETWProviderError { err: win_etw_provider::Error },
+
+    /// Generic logging error for non-Windows platforms
+    #[cfg(not(target_os = "windows"))]
+    #[error("LoggingError: {message}")]
+    LoggingError { message: String },
 }

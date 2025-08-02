@@ -9,7 +9,8 @@
 use std::ops::Deref;
 
 use crate::common::{ANNError, ANNResult, AlignedBoxWithSlice};
-use crate::model::{AlignedRead, MAX_N_SECTOR_READS, SECTOR_LEN};
+use crate::model::{MAX_N_SECTOR_READS, SECTOR_LEN};
+use crate::disk_search::aligned_file_reader::AlignedRead;
 use crate::storage::DiskGraphStorage;
 
 /// Sector graph read from disk index
@@ -63,7 +64,11 @@ impl SectorGraph {
         let mut read_requests = Vec::with_capacity(sector_slices.len());
         for (local_sector_idx, slice) in sector_slices.iter_mut().enumerate() {
             let sector_id = sectors_to_fetch[local_sector_idx];
-            read_requests.push(AlignedRead::new(sector_id * SECTOR_LEN as u64, slice)?);
+            read_requests.push(AlignedRead::new(
+                (sector_id * SECTOR_LEN as u64).try_into().unwrap(), 
+                slice.len(), 
+                slice.as_mut_ptr()
+            ));
         }
 
         self.graph_storage.read(&mut read_requests)?;
