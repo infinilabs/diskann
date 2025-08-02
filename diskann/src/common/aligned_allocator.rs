@@ -59,10 +59,12 @@ where
         Ok(Self { layout, val })
     }
 
+    /// Doubles the capacity of the aligned allocator
     pub fn double_capacity(&mut self) -> ANNResult<()> {
         self.ensure_capacity(self.capacity() * 2)
     }
 
+    /// Ensures the allocator has at least the specified capacity
     pub fn ensure_capacity(&mut self, capacity: usize) -> ANNResult<()> {
         let orig_capacity = self.capacity();
         if capacity <= orig_capacity {
@@ -83,10 +85,12 @@ where
         Ok(())
     }
 
+    /// Returns the current capacity of the allocator
     pub fn capacity(&self) -> usize {
         self.val.len()
     }
 
+    /// Returns the alignment of the allocator
     pub fn alignment(&self) -> usize {
         self.layout.align()
     }

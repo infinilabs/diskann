@@ -23,8 +23,8 @@ pub fn load_aligned_bin_impl<T: Default + Clone>(
     for i in 0..*npts {
         let buf = data[i * rounded_dim..i * rounded_dim + *dim].as_mut_ptr() as *mut u8;
         unsafe {
-            std::slice::from_raw_parts_mut(buf, *dim * tsize);
-        }
+            let _ = std::slice::from_raw_parts_mut(buf, *dim * tsize);
+        };
         reader.read_exact(unsafe { std::slice::from_raw_parts_mut(buf, *dim * tsize) })?;
     }
     Ok(())

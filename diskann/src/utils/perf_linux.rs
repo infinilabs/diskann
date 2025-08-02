@@ -9,12 +9,14 @@ use std::time::Duration;
 use libc::{getpid, sysconf, _SC_CLK_TCK};
 
 #[cfg(not(target_os = "linux"))]
+#[allow(dead_code)]
 fn getpid() -> i32 {
     // Fallback for non-Linux platforms
     0
 }
 
 #[cfg(not(target_os = "linux"))]
+#[allow(dead_code)]
 fn sysconf(_name: i32) -> i64 {
     // Fallback for non-Linux platforms
     100

@@ -69,15 +69,17 @@ where
     );
     let mut index = create_inmem_index::<T>(config)?;
 
-    let timer = Timer::new();
+    let mut timer = Timer::new();
+    timer.start();
 
     if !data.is_empty() {
         index.build_vector(data)?;
     }
 
+    timer.stop();
     let diff = timer.elapsed();
 
-    println!("Initial indexing time: {}", diff.as_secs_f64());
+    println!("Initial indexing time: {}", diff.expect("Timer should have elapsed").as_secs_f64());
 
     if !delta_data.is_empty() {
         index.insert_vector(delta_data)?;
@@ -149,13 +151,15 @@ where
     );
     let mut index = create_inmem_index::<T>(config)?;
 
-    let timer = Timer::new();
+    let mut timer = Timer::new();
+    timer.start();
 
     //index.build(data_path, data_num)?;
 
+    timer.stop();
     let diff = timer.elapsed();
 
-    println!("Initial indexing time: {}", diff.as_secs_f64());
+    println!("Initial indexing time: {}", diff.expect("Timer should have elapsed").as_secs_f64());
 
     if !delta_path.is_empty() {
         let (delta_data_num, _) = load_metadata_from_file(delta_path)?;

@@ -10,9 +10,7 @@ use vector::Metric;
 use crate::{
     disk_search::aligned_file_reader::AlignedFileReader,
     model::IOContext,
-    utils::{
-        aligned_free, div_round_up, get_distance_function, is_floating_point,
-    },
+    utils::{aligned_free, div_round_up, get_distance_function, is_floating_point},
 };
 
 // Constants that were missing
@@ -77,7 +75,7 @@ impl<T> ConcurrentQueue<T> {
 
     pub fn scratch_space(&mut self) -> &mut T {
         // Placeholder implementation
-        unsafe { std::mem::transmute(0usize) }
+        unsafe { std::mem::transmute_copy(&0usize) }
     }
 }
 
@@ -127,7 +125,7 @@ impl<T> QueryScratch<T> {
         self.full_retset.clear();
     }
 
-    pub fn aligned_query_T(&mut self) -> &mut [T] {
+    pub fn aligned_query_t(&mut self) -> &mut [T] {
         &mut self.coord_scratch
     }
 
@@ -140,7 +138,7 @@ impl<T> QueryScratch<T> {
             aligned_dist_scratch: &mut [],
             aligned_pq_coord_scratch: &mut [],
         };
-        unsafe { &mut SCRATCH }
+        unsafe { &mut *(&raw mut SCRATCH) }
     }
 }
 
@@ -339,6 +337,7 @@ pub struct PQFlashIndex<T, LabelT> {
     _label_map: HashMap<String, LabelT>,
 
     // File reader
+    #[allow(dead_code)]
     reader: Arc<dyn AlignedFileReader>,
 }
 
@@ -426,6 +425,7 @@ where
         }
     }
 
+    #[allow(dead_code)]
     fn drop(&mut self) {
         if !self.data.is_null() {
             unsafe {

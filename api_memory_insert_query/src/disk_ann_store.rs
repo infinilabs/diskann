@@ -1,6 +1,6 @@
 use diskann::{
     common::ANNResult,
-    index::ann_disk_index::{create_disk_index, ANNDiskIndex},
+    index::ann_disk_index::create_disk_index,
     model::{
         vertex::{DIM_104, DIM_128, DIM_256, DIM_512}, DiskIndexBuildParameters, IndexConfiguration, IndexWriteParametersBuilder
     },
@@ -56,12 +56,14 @@ where
     let storage = DiskIndexStorage::new(data_path.to_string(), index_path_prefix.to_string())?;
     let mut index = create_disk_index::<T>(Some(disk_index_build_parameters), config, storage)?;
 
-    let timer = Timer::new();
+    let mut timer = Timer::new();
+    timer.start();
 
     index.build("")?;
 
+    timer.stop();
     let diff = timer.elapsed();
-    println!("Indexing time: {}", diff.as_secs_f64());
+    println!("Indexing time: {}", diff.expect("Timer should have elapsed").as_secs_f64());
 
     Ok(())
 }

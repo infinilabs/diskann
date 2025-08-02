@@ -132,6 +132,7 @@ where
         Ok(())
     }
 
+    /// Increases capacity if needed and returns whether capacity was increased
     pub fn or_increase_capacity(&mut self, new_data_len: usize) -> ANNResult<bool> {
         let need_capacity = (self.num_active_pts + new_data_len) * N;
         if need_capacity > self.data.capacity() {

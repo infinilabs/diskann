@@ -61,13 +61,18 @@ where
     );
     let mut index = create_inmem_index::<T>(config)?;
 
-    let timer = Timer::new();
+    let mut timer = Timer::new();
+    timer.start();
 
     index.build(data_path, data_num)?;
 
+    timer.stop();
     let diff = timer.elapsed();
 
-    println!("Indexing time: {}", diff.as_secs_f64());
+    println!(
+        "Indexing time: {}",
+        diff.expect("Timer should have elapsed").as_secs_f64()
+    );
     index.save(save_path)?;
 
     Ok(())

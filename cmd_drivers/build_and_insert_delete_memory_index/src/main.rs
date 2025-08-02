@@ -63,13 +63,18 @@ where
     );
     let mut index = create_inmem_index::<T>(config)?;
 
-    let timer = Timer::new();
+    let mut timer = Timer::new();
+    timer.start();
 
     index.build(data_path, data_num)?;
 
+    timer.stop();
     let diff = timer.elapsed();
 
-    println!("Initial indexing time: {}", diff.as_secs_f64());
+    println!(
+        "Initial indexing time: {}",
+        diff.expect("Timer should have elapsed").as_secs_f64()
+    );
 
     let (delta_data_num, _) = load_metadata_from_file(delta_path)?;
 
