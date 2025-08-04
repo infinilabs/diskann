@@ -4,8 +4,8 @@
  */
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
+use diskann_vector::{FullPrecisionDistance, Metric};
 use rand::{thread_rng, Rng};
-use vector::{FullPrecisionDistance, Metric};
 
 // make sure the vector is 256-bit (32 bytes) aligned required by _mm256_load_ps
 #[repr(C, align(32))]

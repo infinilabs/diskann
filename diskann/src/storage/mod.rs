@@ -5,7 +5,7 @@
 mod disk_index_storage;
 pub use disk_index_storage::*;
 
-mod disk_graph_storage;
+pub mod disk_graph_storage;
 pub use disk_graph_storage::*;
 
 mod pq_storage;

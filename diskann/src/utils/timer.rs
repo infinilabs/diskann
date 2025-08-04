@@ -3,7 +3,7 @@
  * Licensed under the MIT license.
  */
 
-use platform::*;
+use diskann_platform::*;
 
 use std::time::{Duration, Instant};
 

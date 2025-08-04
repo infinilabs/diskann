@@ -8,7 +8,7 @@
 
 use std::array::TryFromSliceError;
 
-use vector::{FullPrecisionDistance, Metric};
+use diskann_vector::{FullPrecisionDistance, Metric};
 
 /// Vertex with data type T and dimension N
 #[derive(Debug)]

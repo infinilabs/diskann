@@ -7,7 +7,7 @@ use std::io::{BufReader, BufWriter, Seek, SeekFrom, Write};
 use std::path::Path;
 
 use byteorder::{LittleEndian, ReadBytesExt};
-use vector::FullPrecisionDistance;
+use diskann_vector::FullPrecisionDistance;
 
 use crate::common::{ANNError, ANNResult};
 use crate::model::graph::AdjacencyList;
@@ -232,7 +232,7 @@ where
 mod index_test {
     use std::fs;
 
-    use vector::Metric;
+            use diskann_vector::Metric;
 
     use super::*;
     use crate::{

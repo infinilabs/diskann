@@ -6,7 +6,7 @@
 
 //! Index configuration.
 
-use vector::Metric;
+use diskann_vector::Metric;
 
 use super::index_write_parameters::IndexWriteParameters;
 

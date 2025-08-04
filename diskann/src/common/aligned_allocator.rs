@@ -46,8 +46,8 @@ where
         let allocsize = capacity
             .checked_mul(std::mem::size_of::<T>())
             .ok_or_else(|| ANNError::log_index_error("capacity overflow".to_string()))?;
-        let layout = Layout::from_size_align(allocsize, alignment)
-            .map_err(ANNError::log_mem_alloc_layout_error)?;
+        let layout = std::alloc::Layout::from_size_align(allocsize, alignment)
+            .map_err(ANNError::log_memory_alloc_layout_error)?;
 
         let val = unsafe {
             let mem = std::alloc::alloc_zeroed(layout);

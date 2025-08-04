@@ -6,7 +6,7 @@
 
 //! ANN in-memory index abstraction
 
-use vector::FullPrecisionDistance;
+use diskann_vector::FullPrecisionDistance;
 
 use crate::common::{ANNError, ANNResult};
 use crate::model::{
@@ -104,7 +104,7 @@ where
 
 #[cfg(test)]
 mod dataset_test {
-    use vector::Metric;
+            use diskann_vector::Metric;
 
     use crate::model::configuration::index_write_parameters::IndexWriteParametersBuilder;
 

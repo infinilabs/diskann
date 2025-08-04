@@ -14,5 +14,5 @@ bytemuck = "1.13.1"
 diskann = { path = "../../../diskann" }
 num_cpus = "1.15.0"
 rayon = "1.7.0"
-vector = { path = "../../../vector" }
+diskann-vector = { path = "../../../vector" }
 

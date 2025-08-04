@@ -1,0 +1,35 @@
+[package]
+name = "diskann_performance_benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+criterion = "0.5"
+diskann = { path = "../../diskann" }
+rand = "0.8"
+tempfile = "3.8"
+
+[[bench]]
+name = "simple_benchmark"
+path = "simple_benchmark.rs"
+harness = false
+
+[[bench]]
+name = "search_benchmarks"
+path = "search_benchmarks.rs"
+harness = false
+
+[[bench]]
+name = "memory_usage_benchmarks"
+path = "memory_usage_benchmarks.rs"
+harness = false
+
+[[bench]]
+name = "indexing_benchmarks"
+path = "indexing_benchmarks.rs"
+harness = false
+
+[[bench]]
+name = "build_benchmark"
+path = "build_benchmark.rs"
+harness = false

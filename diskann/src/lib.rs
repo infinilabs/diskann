@@ -7,7 +7,7 @@
     warn(clippy::panic, clippy::unwrap_used, clippy::expect_used)
 )]
 #![cfg_attr(test, allow(clippy::unused_io_amount))]
-#![doc = include_str!("../../README.md")]
+#![doc = include_str!("../README.md")]
 
 //! # DiskANN - Approximate Nearest Neighbor Search in Rust
 //!
@@ -63,6 +63,7 @@ pub mod index;
 pub mod instrumentation;
 pub mod model;
 pub mod utils;
+pub mod vector;
 
 #[cfg(feature = "disk_store")]
 pub mod storage;
@@ -72,9 +73,12 @@ pub mod test_utils;
 
 // Re-export commonly used types for convenience
 pub use common::{ANNError, ANNResult};
+pub use diskann_vector::Metric;
 pub use model::configuration::index_configuration::IndexConfiguration;
 pub use model::configuration::index_write_parameters::IndexWriteParametersBuilder;
-pub use vector::Metric;
+
+// Re-export disk search types
+pub use disk_search::beam_search::{BeamSearch, SearchParameters, SimpleFileReader};
 
 /// High-level index builder for easy configuration
 pub struct IndexBuilder {
@@ -147,10 +151,10 @@ impl IndexBuilder {
     pub fn build_in_memory<T>(self) -> ANNResult<InMemoryIndex<T>>
     where
         T: Default + Copy + Sync + Send + Into<f32> + 'static,
-        [T; 104]: vector::FullPrecisionDistance<T, 104>,
-        [T; 128]: vector::FullPrecisionDistance<T, 128>,
-        [T; 256]: vector::FullPrecisionDistance<T, 256>,
-        [T; 512]: vector::FullPrecisionDistance<T, 512>,
+        [T; 104]: diskann_vector::FullPrecisionDistance<T, 104>,
+        [T; 128]: diskann_vector::FullPrecisionDistance<T, 128>,
+        [T; 256]: diskann_vector::FullPrecisionDistance<T, 256>,
+        [T; 512]: diskann_vector::FullPrecisionDistance<T, 512>,
     {
         InMemoryIndex::new(
             self.dimension,
@@ -195,10 +199,10 @@ pub struct InMemoryIndex<T> {
 impl<T> InMemoryIndex<T>
 where
     T: Default + Copy + Sync + Send + Into<f32> + 'static,
-    [T; 104]: vector::FullPrecisionDistance<T, 104>,
-    [T; 128]: vector::FullPrecisionDistance<T, 128>,
-    [T; 256]: vector::FullPrecisionDistance<T, 256>,
-    [T; 512]: vector::FullPrecisionDistance<T, 512>,
+    [T; 104]: diskann_vector::FullPrecisionDistance<T, 104>,
+    [T; 128]: diskann_vector::FullPrecisionDistance<T, 128>,
+    [T; 256]: diskann_vector::FullPrecisionDistance<T, 256>,
+    [T; 512]: diskann_vector::FullPrecisionDistance<T, 512>,
 {
     /// Create a new in-memory index
     pub fn new(
@@ -220,7 +224,7 @@ where
             metric,
             dimension,
             utils::round_up(dimension as u64, 8) as usize,
-            0, // Will be set during build
+            10000, // Set reasonable initial capacity
             false,
             0,
             use_opq,

@@ -105,3 +105,5 @@ docker-compose.yml
 
 cleaned_images
 api_memory_insert_query/test/input
+
+c++/

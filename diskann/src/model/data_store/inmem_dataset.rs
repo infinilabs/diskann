@@ -11,7 +11,7 @@ use rayon::prelude::*;
 use std::fs::File;
 use std::io::Seek;
 use std::mem;
-use vector::{FullPrecisionDistance, Metric};
+use diskann_vector::{FullPrecisionDistance, Metric};
 
 use crate::common::{ANNError, ANNResult, AlignedBoxWithSlice};
 use crate::index::INIT_WARMUP_DATA_LEN;
@@ -273,7 +273,7 @@ where
 
         if end <= self.data.len() {
             let vec = &self.data[start..end];
-            vector::prefetch_vector(vec);
+            diskann_vector::prefetch_vector(vec);
         }
     }
 

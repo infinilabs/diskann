@@ -110,7 +110,7 @@ pub fn aligned_free(ptr: *mut std::ffi::c_void) {
 }
 
 /// Get distance function based on metric
-pub fn get_distance_function<T>(_metric: vector::Metric) -> Arc<Distance<T>> {
+pub fn get_distance_function<T>(_metric: diskann_vector::Metric) -> Arc<Distance<T>> {
     // This is a placeholder implementation
     // In a real implementation, you'd return the appropriate distance function
     Arc::new(Distance::<T>::new())

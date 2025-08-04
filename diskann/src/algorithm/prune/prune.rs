@@ -3,7 +3,7 @@
  * Licensed under the MIT license.
  */
 use hashbrown::HashSet;
-use vector::{FullPrecisionDistance, Metric};
+use diskann_vector::{FullPrecisionDistance, Metric};
 
 use crate::common::{ANNError, ANNResult};
 use crate::index::InmemIndex;

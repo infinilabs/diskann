@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 diskann = { path = "../diskann" }
-vector = { path = "../vector" }
+diskann-vector = { path = "../vector" }
 rayon = "1.8"
 rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }

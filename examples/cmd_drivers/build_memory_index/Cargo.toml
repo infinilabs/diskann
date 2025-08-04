@@ -12,5 +12,5 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 clap = { version = "4.3.8", features = ["derive"] }
 diskann = { path = "../../../diskann" }
-vector = { path = "../../../vector" }
+diskann-vector = { path = "../../../vector" }
 

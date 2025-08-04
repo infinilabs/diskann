@@ -16,7 +16,7 @@ use diskann::{
     utils::{file_exists, load_ids_to_delete_from_file, load_metadata_from_file, Timer},
 };
 
-use vector::{FullPrecisionDistance, Half, Metric};
+use diskann_vector::{FullPrecisionDistance, Half, Metric};
 
 // The main function to build an in-memory index
 #[allow(clippy::too_many_arguments)]

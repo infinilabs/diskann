@@ -23,7 +23,7 @@ use diskann::{
 use vector_search_demo::mem_ann_store::MemANNStore;
 
 use serde::{Deserialize, Serialize};
-use vector::{FullPrecisionDistance, Metric};
+use diskann_vector::{FullPrecisionDistance, Metric};
 
 // The main function to build an in-memory index
 #[allow(clippy::too_many_arguments)]

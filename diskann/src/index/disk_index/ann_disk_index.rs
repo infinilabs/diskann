@@ -6,7 +6,7 @@
 
 //! ANN disk index abstraction
 
-use vector::FullPrecisionDistance;
+use diskann_vector::FullPrecisionDistance;
 
 use crate::model::vertex::{DIM_104, DIM_128, DIM_256, DIM_512};
 use crate::model::{DiskIndexBuildParameters, IndexConfiguration};
@@ -23,6 +23,9 @@ where
 {
     /// Build index
     fn build(&mut self, codebook_prefix: &str) -> ANNResult<()>;
+
+    /// Load existing index from disk
+    fn load(&mut self) -> ANNResult<()>;
 
     /// Search the index for K nearest neighbors of query using given L value, for benchmarking purposes
     fn search(
@@ -89,6 +92,47 @@ where
                 storage,
             ));
             Ok(index as Box<dyn ANNDiskIndex<T>>)
+        }
+        _ => Err(ANNError::log_index_error(format!(
+            "Invalid dimension: {}",
+            config.aligned_dim
+        ))),
+    }
+}
+
+/// Load existing disk index from storage
+pub fn load_disk_index<'a, T>(
+    disk_build_param: Option<DiskIndexBuildParameters>,
+    config: IndexConfiguration,
+    storage: DiskIndexStorage<T>,
+) -> ANNResult<Box<dyn ANNDiskIndex<T> + 'a>>
+where
+    T: Default + Copy + Sync + Send + Into<f32> + 'a,
+    [T; DIM_104]: FullPrecisionDistance<T, DIM_104>,
+    [T; DIM_128]: FullPrecisionDistance<T, DIM_128>,
+    [T; DIM_256]: FullPrecisionDistance<T, DIM_256>,
+    [T; DIM_512]: FullPrecisionDistance<T, DIM_512>,
+{
+    match config.aligned_dim {
+        DIM_104 => {
+            let mut index = DiskIndex::<T, DIM_104>::new(disk_build_param, config, storage);
+            index.load()?;
+            Ok(Box::new(index) as Box<dyn ANNDiskIndex<T>>)
+        }
+        DIM_128 => {
+            let mut index = DiskIndex::<T, DIM_128>::new(disk_build_param, config, storage);
+            index.load()?;
+            Ok(Box::new(index) as Box<dyn ANNDiskIndex<T>>)
+        }
+        DIM_256 => {
+            let mut index = DiskIndex::<T, DIM_256>::new(disk_build_param, config, storage);
+            index.load()?;
+            Ok(Box::new(index) as Box<dyn ANNDiskIndex<T>>)
+        }
+        DIM_512 => {
+            let mut index = DiskIndex::<T, DIM_512>::new(disk_build_param, config, storage);
+            index.load()?;
+            Ok(Box::new(index) as Box<dyn ANNDiskIndex<T>>)
         }
         _ => Err(ANNError::log_index_error(format!(
             "Invalid dimension: {}",

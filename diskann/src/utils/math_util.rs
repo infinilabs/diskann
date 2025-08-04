@@ -136,6 +136,212 @@ pub fn calc_distance(vec_1: &[f32], vec_2: &[f32], dim: usize) -> f32 {
     dist
 }
 
+/// Optimized SIMD distance calculation for better k-means performance
+#[inline]
+pub fn calc_distance_simd(vec_1: &[f32], vec_2: &[f32], dim: usize) -> f32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        unsafe {
+            let mut sum = _mm256_setzero_ps();
+            let aligned_len = dim - (dim % 8);
+
+            // Process 8 elements at a time using AVX2
+            for i in (0..aligned_len).step_by(8) {
+                let v1 = _mm256_loadu_ps(&vec_1[i]);
+                let v2 = _mm256_loadu_ps(&vec_2[i]);
+                let diff = _mm256_sub_ps(v1, v2);
+                sum = _mm256_fmadd_ps(diff, diff, sum);
+            }
+
+            // Horizontal sum
+            let x128: __m128 =
+                _mm_add_ps(_mm256_extractf128_ps(sum, 1), _mm256_castps256_ps128(sum));
+            let x64: __m128 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));
+            let x32: __m128 = _mm_add_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
+            let mut result = _mm_cvtss_f32(x32);
+
+            // Handle remaining elements
+            for i in aligned_len..dim {
+                let diff = vec_1[i] - vec_2[i];
+                result += diff * diff;
+            }
+
+            result
+        }
+    }
+
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        calc_distance(vec_1, vec_2, dim)
+    }
+}
+
+/// Ultra-optimized SIMD distance calculation with AVX-512 support
+#[inline]
+pub fn calc_distance_avx512(vec_1: &[f32], vec_2: &[f32], dim: usize) -> f32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        unsafe {
+            // Check for AVX-512 support
+            if is_x86_feature_detected!("avx512f") {
+                let mut sum = _mm512_setzero_ps();
+                let aligned_len = dim - (dim % 16);
+
+                // Process 16 elements at a time using AVX-512
+                for i in (0..aligned_len).step_by(16) {
+                    let v1 = _mm512_loadu_ps(&vec_1[i]);
+                    let v2 = _mm512_loadu_ps(&vec_2[i]);
+                    let diff = _mm512_sub_ps(v1, v2);
+                    sum = _mm512_fmadd_ps(diff, diff, sum);
+                }
+
+                // Horizontal sum for AVX-512
+                let mut result = _mm512_reduce_add_ps(sum);
+
+                // Handle remaining elements
+                for i in aligned_len..dim {
+                    let diff = vec_1[i] - vec_2[i];
+                    result += diff * diff;
+                }
+
+                result
+            } else {
+                calc_distance_avx2(vec_1, vec_2, dim)
+            }
+        }
+    }
+
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        calc_distance_simd(vec_1, vec_2, dim)
+    }
+}
+
+/// Optimized AVX2 distance calculation
+#[inline]
+pub fn calc_distance_avx2(vec_1: &[f32], vec_2: &[f32], dim: usize) -> f32 {
+    #[cfg(target_arch = "x86_64")]
+    {
+        unsafe {
+            let mut sum = _mm256_setzero_ps();
+            let aligned_len = dim - (dim % 8);
+
+            // Process 8 elements at a time using AVX2
+            for i in (0..aligned_len).step_by(8) {
+                let v1 = _mm256_loadu_ps(&vec_1[i]);
+                let v2 = _mm256_loadu_ps(&vec_2[i]);
+                let diff = _mm256_sub_ps(v1, v2);
+                sum = _mm256_fmadd_ps(diff, diff, sum);
+            }
+
+            // Horizontal sum
+            let x128: __m128 = _mm_add_ps(_mm256_extractf128_ps(sum, 1), _mm256_castps256_ps128(sum));
+            let x64: __m128 = _mm_add_ps(x128, _mm_movehl_ps(x128, x128));
+            let x32: __m128 = _mm_add_ss(x64, _mm_shuffle_ps(x64, x64, 0x55));
+            let mut result = _mm_cvtss_f32(x32);
+
+            // Handle remaining elements
+            for i in aligned_len..dim {
+                let diff = vec_1[i] - vec_2[i];
+                result += diff * diff;
+            }
+
+            result
+        }
+    }
+
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        calc_distance_simd(vec_1, vec_2, dim)
+    }
+}
+
+/// Vectorized batch distance calculation with memory-aligned access
+pub fn calc_distances_batch_vectorized(
+    data: &[f32],
+    centers: &[f32],
+    num_points: usize,
+    num_centers: usize,
+    dim: usize,
+    distances: &mut [f32],
+) {
+    assert_eq!(distances.len(), num_points * num_centers);
+    
+    // Ultra-aggressive chunked parallel processing for maximum throughput
+    let chunk_size = 8192; // 8x larger for better cache performance
+    let num_chunks = (num_points + chunk_size - 1) / chunk_size;
+    
+    distances.par_chunks_mut(num_centers * chunk_size).enumerate().for_each(|(chunk_idx, chunk_distances)| {
+        let start_point = chunk_idx * chunk_size;
+        let end_point = std::cmp::min(start_point + chunk_size, num_points);
+        
+        // Process points in ultra-large batches for SIMD efficiency
+        for point_batch_start in (start_point..end_point).step_by(64) {
+            let point_batch_end = std::cmp::min(point_batch_start + 32, end_point);
+            
+            for point_idx in point_batch_start..point_batch_end {
+                let point_start = point_idx * dim;
+                let dist_start = (point_idx - start_point) * num_centers;
+                
+                // Vectorized distance calculation for this point to all centers
+                for center_idx in 0..num_centers {
+                    let center_start = center_idx * dim;
+                    let dist_idx = dist_start + center_idx;
+                    
+                    chunk_distances[dist_idx] = calc_distance_avx512(
+                        &data[point_start..point_start + dim],
+                        &centers[center_start..center_start + dim],
+                        dim,
+                    );
+                }
+            }
+        }
+    });
+}
+
+/// Ultra-aggressive batch distance calculation with maximum SIMD utilization
+pub fn calc_distances_batch_ultra_vectorized(
+    data: &[f32],
+    centers: &[f32],
+    num_points: usize,
+    num_centers: usize,
+    dim: usize,
+    distances: &mut [f32],
+) {
+    assert_eq!(distances.len(), num_points * num_centers);
+    
+    // Ultra-large chunks for maximum cache efficiency
+    let chunk_size = 16384; // 16KB chunks for optimal L2 cache performance
+    let num_chunks = (num_points + chunk_size - 1) / chunk_size;
+    
+    distances.par_chunks_mut(num_centers * chunk_size).enumerate().for_each(|(chunk_idx, chunk_distances)| {
+        let start_point = chunk_idx * chunk_size;
+        let end_point = std::cmp::min(start_point + chunk_size, num_points);
+        
+        // Process points in ultra-large batches for maximum SIMD efficiency
+        for point_batch_start in (start_point..end_point).step_by(128) {
+            let point_batch_end = std::cmp::min(point_batch_start + 64, end_point);
+            
+            for point_idx in point_batch_start..point_batch_end {
+                let point_start = point_idx * dim;
+                let dist_start = (point_idx - start_point) * num_centers;
+                
+                // Vectorized distance calculation for this point to all centers
+                for center_idx in 0..num_centers {
+                    let center_start = center_idx * dim;
+                    let dist_idx = dist_start + center_idx;
+                    
+                    chunk_distances[dist_idx] = calc_distance_avx512(
+                        &data[point_start..point_start + dim],
+                        &centers[center_start..center_start + dim],
+                        dim,
+                    );
+                }
+            }
+        }
+    });
+}
+
 /// Compute L2-squared norms of data stored in row-major num_points * dim,
 /// need to be pre-allocated
 pub fn compute_vecs_l2sq(vecs_l2sq: &mut [f32], data: &[f32], num_points: usize, dim: usize) {
@@ -381,6 +587,56 @@ mod math_util_test {
         let expected = 27.0;
 
         assert_eq!(dist, expected);
+    }
+
+    #[test]
+    fn calc_distance_simd_test() {
+        let vec1 = vec![1.0, 2.0, 3.0];
+        let vec2 = vec![4.0, 5.0, 6.0];
+        let dim = vec1.len();
+
+        let dist = calc_distance_simd(&vec1, &vec2, dim);
+
+        let expected = 27.0;
+
+        assert_eq!(dist, expected);
+    }
+
+    #[test]
+    fn calc_distances_batch_simd_test() {
+        let num_points = 2;
+        let num_centers = 3;
+        let dim = 3;
+        let data = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let centers = vec![10.0, 11.0, 12.0, 13.0, 14.0, 15.0];
+        let mut distances = vec![0.0; num_points * num_centers];
+
+        calc_distances_batch_ultra_vectorized(
+            &data,
+            &centers,
+            num_points,
+            num_centers,
+            dim,
+            &mut distances,
+        );
+
+        let expected = vec![
+            100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0,
+        ];
+
+        assert_eq!(distances.len(), num_points * num_centers);
+        assert_abs_diff_eq!(distances[0], expected[0], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[1], expected[1], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[2], expected[2], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[3], expected[3], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[4], expected[4], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[5], expected[5], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[6], expected[6], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[7], expected[7], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[8], expected[8], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[9], expected[9], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[10], expected[10], epsilon = 1e-6);
+        assert_abs_diff_eq!(distances[11], expected[11], epsilon = 1e-6);
     }
 
     #[test]

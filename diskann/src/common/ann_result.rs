@@ -2,153 +2,129 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT license.
  */
-use std::alloc::LayoutError;
-use std::array::TryFromSliceError;
+use std::fmt;
 use std::io;
-use std::num::TryFromIntError;
+use std::sync::PoisonError;
 
-use tracing::error;
+use thiserror::Error;
 
-/// Result
-pub type ANNResult<T> = Result<T, ANNError>;
+use crate::model::configuration::index_configuration::IndexConfiguration;
 
-/// DiskANN Error
-/// ANNError is `Send` (i.e., safe to send across threads)
-#[derive(thiserror::Error, Debug)]
+use tracing as trace;
+
+/// ANN Error types
+#[derive(Error, Debug)]
 pub enum ANNError {
-    /// Index construction and search error
     #[error("IndexError: {err}")]
     IndexError { err: String },
 
-    /// Index configuration error
     #[error("IndexConfigError: {parameter} is invalid, err={err}")]
     IndexConfigError { parameter: String, err: String },
 
-    /// Integer conversion error
     #[error("TryFromIntError: {err}")]
     TryFromIntError {
         #[from]
-        err: TryFromIntError,
+        err: std::num::TryFromIntError,
     },
 
-    /// IO error
     #[error("IOError: {err}")]
     IOError {
         #[from]
         err: io::Error,
     },
 
-    /// Layout error in memory allocation
     #[error("MemoryAllocLayoutError: {err}")]
     MemoryAllocLayoutError {
         #[from]
-        err: LayoutError,
+        err: std::alloc::LayoutError,
     },
 
-    /// PoisonError which can be returned whenever a lock is acquired
-    /// Both Mutexes and RwLocks are poisoned whenever a thread fails while the lock is held
     #[error("LockPoisonError: {err}")]
     LockPoisonError { err: String },
 
-    /// DiskIOAlignmentError which can be returned when calling windows API CreateFileA for the disk index file fails.
     #[error("DiskIOAlignmentError: {err}")]
     DiskIOAlignmentError { err: String },
 
-    /// Logging error
     #[error("LogError: {err}")]
     LogError { err: String },
 
-    // PQ construction error
-    // Error happened when we construct PQ pivot or PQ compressed table
     #[error("PQError: {err}")]
     PQError { err: String },
 
-    /// Array conversion error
     #[error("Error try creating array from slice: {err}")]
     TryFromSliceError {
         #[from]
-        err: TryFromSliceError,
+        err: std::array::TryFromSliceError,
     },
 
     #[error("Error file size not match: {message}, {actual_size} != {expected_actual_file_size}")]
-    FileSizeMismatch {
+    FileSizeNotMatchError {
         message: String,
-        actual_size: usize,
-        expected_actual_file_size: usize,
+        actual_size: u64,
+        expected_actual_file_size: u64,
     },
 }
 
 impl ANNError {
-    /// Create, log and return IndexError
-    #[inline]
     pub fn log_index_error(err: String) -> Self {
-        let ann_err = ANNError::IndexError { err: err.clone() };
-        error!("IndexError: {}", err);
-        ann_err
+        Self::IndexError { err }
     }
 
-    /// Create, log and return IndexConfigError
-    #[inline]
     pub fn log_index_config_error(parameter: String, err: String) -> Self {
-        let ann_err = ANNError::IndexConfigError { parameter: parameter.clone(), err: err.clone() };
-        error!("IndexConfigError: {} is invalid, err={}", parameter, err);
-        ann_err
+        Self::IndexConfigError { parameter, err }
     }
 
-    /// Create, log and return TryFromIntError
-    #[inline]
-    pub fn log_try_from_int_error(err: TryFromIntError) -> Self {
-        let ann_err = ANNError::TryFromIntError { err };
-        error!("TryFromIntError: {}", ann_err);
-        ann_err
-    }
-
-    /// Create, log and return IOError
-    #[inline]
     pub fn log_io_error(err: io::Error) -> Self {
-        let ann_err = ANNError::IOError { err };
-        error!("IOError: {}", ann_err);
-        ann_err
+        Self::IOError { err }
     }
 
-    /// Create, log and return DiskIOAlignmentError
-    #[inline]
-    pub fn log_disk_io_request_alignment_error(err: String) -> Self {
-        let ann_err = ANNError::DiskIOAlignmentError { err: err.clone() };
-        error!("DiskIOAlignmentError: {}", err);
-        ann_err
+    pub fn log_memory_alloc_layout_error(err: std::alloc::LayoutError) -> Self {
+        Self::MemoryAllocLayoutError { err }
     }
 
-    /// Create, log and return MemoryAllocLayoutError
-    #[inline]
-    pub fn log_mem_alloc_layout_error(err: LayoutError) -> Self {
-        let ann_err = ANNError::MemoryAllocLayoutError { err };
-        error!("MemoryAllocLayoutError: {}", ann_err);
-        ann_err
-    }
-
-    /// Create, log and return LockPoisonError
-    #[inline]
     pub fn log_lock_poison_error(err: String) -> Self {
-        let ann_err = ANNError::LockPoisonError { err: err.clone() };
-        error!("LockPoisonError: {}", err);
-        ann_err
+        Self::LockPoisonError { err }
     }
 
-    /// Create, log and return PQError
-    #[inline]
+    pub fn log_disk_io_alignment_error(err: String) -> Self {
+        Self::DiskIOAlignmentError { err }
+    }
+
+    pub fn log_error(err: String) -> Self {
+        Self::LogError { err }
+    }
+
     pub fn log_pq_error(err: String) -> Self {
-        let ann_err = ANNError::PQError { err: err.clone() };
-        error!("PQError: {}", err);
-        ann_err
+        Self::PQError { err }
     }
 
-    /// Create, log and return TryFromSliceError
-    #[inline]
-    pub fn log_try_from_slice_error(err: TryFromSliceError) -> Self {
-        let ann_err = ANNError::TryFromSliceError { err };
-        error!("TryFromSliceError: {}", ann_err);
-        ann_err
+    pub fn log_file_size_not_match_error(
+        message: String,
+        actual_size: u64,
+        expected_actual_file_size: u64,
+    ) -> Self {
+        Self::FileSizeNotMatchError {
+            message,
+            actual_size,
+            expected_actual_file_size,
+        }
+    }
+}
+
+/// ANN Result type
+pub type ANNResult<T> = Result<T, ANNError>;
+
+impl<T> From<PoisonError<T>> for ANNError {
+    fn from(err: PoisonError<T>) -> Self {
+        Self::LockPoisonError {
+            err: err.to_string(),
+        }
+    }
+}
+
+impl From<ANNError> for io::Error {
+    fn from(err: ANNError) -> Self {
+        io::Error::new(io::ErrorKind::Other, err.to_string())
     }
 }
 

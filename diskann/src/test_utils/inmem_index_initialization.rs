@@ -2,7 +2,7 @@
  * Copyright (c) Microsoft Corporation. All rights reserved.
  * Licensed under the MIT license.
  */
-use vector::Metric;
+use diskann_vector::Metric;
 
 use crate::index::InmemIndex;
 use crate::model::configuration::index_write_parameters::IndexWriteParametersBuilder;

@@ -10,8 +10,8 @@ use crossbeam::sync::ShardedLock;
 use hashbrown::HashMap;
 use once_cell::sync::Lazy;
 
-use platform::file_handle::{AccessMode, ShareMode};
-use platform::{
+use diskann_platform::file_handle::{AccessMode, ShareMode};
+use diskann_platform::{
     file_handle::FileHandle,
     file_io::{get_queued_completion_status, read_file_to_slice},
     io_completion_port::IOCompletionPort,
@@ -23,6 +23,9 @@ use winapi::{
 };
 
 use crate::common::{ANNError, ANNResult};
+use crate::disk_search::aligned_file_reader::{
+    AlignedFileReader as DiskAlignedFileReader, AlignedRead as DiskAlignedRead,
+};
 use crate::model::IOContext;
 
 pub const MAX_IO_CONCURRENCY: usize = 128; // To do: explore the optimal value for this. The current value is taken from C++ code.
@@ -198,6 +201,59 @@ impl WindowsAlignedFileReader {
         }
 
         Ok(())
+    }
+}
+
+impl DiskAlignedFileReader for WindowsAlignedFileReader {
+    fn get_ctx(&mut self) -> IOContext {
+        match self.get_ctx() {
+            Ok(ctx) => (*ctx).clone(),
+            Err(_) => IOContext::default(),
+        }
+    }
+
+    fn register_thread(&mut self) {
+        let _ = self.register_thread();
+    }
+
+    fn deregister_thread(&mut self) {
+        // Windows implementation doesn't have explicit deregistration
+        // The context is managed per thread automatically
+    }
+
+    fn deregister_all_threads(&mut self) {
+        // Windows implementation doesn't have explicit deregistration
+        // The context is managed per thread automatically
+    }
+
+    fn open(&mut self, _fname: &str) {
+        // File is already opened in the constructor
+        // This is a no-op for the Windows implementation
+    }
+
+    fn close(&mut self) {
+        // File handles are automatically closed when dropped
+        // This is a no-op for the Windows implementation
+    }
+
+    fn read(&mut self, read_reqs: &mut Vec<DiskAlignedRead>, ctx: &mut IOContext) {
+        // Convert DiskAlignedRead to our internal AlignedRead format
+        let mut internal_reads = Vec::new();
+
+        for disk_read in read_reqs.iter_mut() {
+            // Convert the raw pointer to a slice
+            let buf_slice = unsafe { std::slice::from_raw_parts_mut(disk_read.buf, disk_read.len) };
+
+            // Create our internal AlignedRead
+            if let Ok(aligned_read) = AlignedRead::new(disk_read.offset as u64, buf_slice) {
+                internal_reads.push(aligned_read);
+            }
+        }
+
+        // Use our internal read method
+        if let Ok(ctx_arc) = self.get_ctx() {
+            let _ = self.read(&mut internal_reads, &ctx_arc);
+        }
     }
 }
 

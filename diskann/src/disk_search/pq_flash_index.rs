@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use vector::Metric;
+use diskann_vector::Metric;
 
 use crate::{
     disk_search::aligned_file_reader::AlignedFileReader,

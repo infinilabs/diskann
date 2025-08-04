@@ -11,5 +11,5 @@ edition = "2021"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 diskann = { path = "../../../diskann" }
-vector = { path = "../../../vector" }
+diskann-vector = { path = "../../../vector" }
 

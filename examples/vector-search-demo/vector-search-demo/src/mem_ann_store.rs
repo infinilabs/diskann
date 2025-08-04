@@ -12,7 +12,7 @@ use diskann::{
     utils::round_up,
 };
 
-use vector::{FullPrecisionDistance, Metric};
+use diskann_vector::{FullPrecisionDistance, Metric};
 
 pub struct MemANNStore<T>
 where

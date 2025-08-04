@@ -98,6 +98,36 @@ cargo run --bin benchmark-vector-search
   - Data conversion utilities
   - Batch processing tools
 
+#### Disk Index Workflow
+The disk index workflow consists of two main steps:
+
+1. **Build Disk Index** (`build_disk_index/`):
+   ```bash
+   # Build a disk-based index for large datasets
+   cargo run -p build_disk_index -- \
+     --data_type float \
+     --dist_fn l2 \
+     --data_path vectors.bin \
+     --index_path_prefix data/index
+   ```
+
+2. **Search Disk Index** (`search_disk_index/`):
+   ```bash
+   # Search the built index
+   cargo run -p search_disk_index -- \
+     --data_type float \
+     --dist_fn l2 \
+     --index_path_prefix data/index \
+     --query_file queries.bin \
+     --result_file results.txt
+   ```
+
+**Key Benefits**:
+- **Persistent Storage**: Built indices can be reused multiple times
+- **Large Dataset Support**: Handles datasets larger than available memory
+- **High Performance**: Optimized for both build and search operations
+- **Flexible Configuration**: Supports various data types and distance metrics
+
 ## 🔧 Usage Examples
 
 ### Basic Vector Search

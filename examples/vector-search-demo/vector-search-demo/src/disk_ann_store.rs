@@ -8,7 +8,7 @@ use diskann::{
     utils::{load_metadata_from_file, round_up, Timer},
 };
 
-use vector::{FullPrecisionDistance, Metric};
+use diskann_vector::{FullPrecisionDistance, Metric};
 
 /// The main function to build a disk index
 #[allow(clippy::too_many_arguments)]
@@ -71,7 +71,7 @@ where
 #[cfg(test)]
 mod tests {
     use diskann::common::ANNResult;
-    use vector::Metric;
+            use diskann_vector::Metric;
     use crate::disk_ann_store::build_disk_index;
 
     const VECTOR_FILE: &str = "test/input/embeddings.json";

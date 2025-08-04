@@ -46,3 +46,5 @@ pub use kmeans::*;
 
 pub mod type_util;
 pub use type_util::*;
+
+pub mod vectorized_storage;

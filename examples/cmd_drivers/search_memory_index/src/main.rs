@@ -15,7 +15,7 @@ use diskann::{
     utils::{load_metadata_from_file, save_bin_u32},
 };
 use std::{env, path::Path, process::exit, time::Instant};
-use vector::{FullPrecisionDistance, Half, Metric};
+use diskann_vector::{FullPrecisionDistance, Half, Metric};
 
 use rayon::prelude::*;
 

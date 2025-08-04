@@ -7,7 +7,7 @@
 //! Disk graph
 
 use byteorder::{ByteOrder, LittleEndian};
-use vector::FullPrecisionDistance;
+use diskann_vector::FullPrecisionDistance;
 
 use crate::common::{ANNError, ANNResult};
 use crate::model::data_store::DiskScratchDataset;

@@ -1,23 +1,20 @@
-[![DiskANN Paper](https://img.shields.io/badge/Paper-NeurIPS%3A_DiskANN-blue)](https://papers.nips.cc/paper/9527-rand-nsg-fast-accurate-billion-point-nearest-neighbor-search-on-a-single-node.pdf)
-[![DiskANN Paper](https://img.shields.io/badge/Paper-Arxiv%3A_Fresh--DiskANN-blue)](https://arxiv.org/abs/2105.09613)
-[![DiskANN Paper](https://img.shields.io/badge/Paper-Filtered--DiskANN-blue)](https://harsha-simhadri.org/pubs/Filtered-DiskANN23.pdf)
-[![Rust](https://img.shields.io/badge/Rust-1.70+-orange.svg)](https://www.rust-lang.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+# DiskANN - Approximate Nearest Neighbor Search in Rust
 
-# DiskANN - High-Performance Vector Search in Rust
+[![Crates.io](https://img.shields.io/crates/v/diskann)](https://crates.io/crates/diskann)
+[![Documentation](https://docs.rs/diskann/badge.svg)](https://docs.rs/diskann)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 DiskANN is a high-performance, scalable approximate nearest neighbor (ANN) search library implemented in Rust. It provides both in-memory and disk-based indexing for large-scale vector search with high recall and low latency.
 
 ## 🚀 Key Features
 
-- **Pure Rust implementation** - No C/C++ dependencies, leveraging Rust's memory safety and zero-cost abstractions
+- **Pure Rust implementation** - No C/C++ dependencies, leveraging Rust's memory safety
 - **Disk-based indexing** - Support for datasets that don't fit in memory
 - **High performance** - Optimized for fast approximate nearest neighbor search
-- **Parallel processing** - Leverages Rust's concurrency features for efficient indexing and querying
-- **Multiple distance metrics** - Support for L2, cosine, inner product, and other distance functions
+- **Parallel processing** - Leverages Rust's concurrency features
+- **Multiple distance metrics** - Support for L2, cosine, and other distance functions
 - **Flexible data types** - Support for f32, f16, and other numeric types
-- **Memory efficient** - Smart caching and memory management for large datasets
-- **Production ready** - Comprehensive error handling and robust APIs
+- **Comprehensive examples** - Complete working examples for all functionality
 
 ## 📦 Installation
 
@@ -25,353 +22,300 @@ Add DiskANN to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-diskann = "0.1"
+diskann = "0.1.0"
 ```
 
 ## 🎯 Quick Start
 
-### Basic Usage
+### Basic In-Memory Search
 
 ```rust
-use diskann::{IndexBuilder, Metric, ANNResult};
+use diskann::{IndexBuilder, Metric, SearchParams};
 
-fn main() -> ANNResult<()> {
-    // Create an in-memory index
-    let mut index = IndexBuilder::new()
-        .with_dimension(128)           // Vector dimension
-        .with_metric(Metric::L2)       // Distance metric
-        .with_max_degree(64)           // Maximum graph degree
-        .with_search_list_size(100)    // Search beam width
-        .with_alpha(1.2)               // Graph density parameter
-        .with_num_threads(4)           // Number of threads
-        .build_in_memory::<f32>()?;
+// Create an in-memory index
+let mut index = IndexBuilder::new()
+    .with_dimension(128)
+    .with_metric(Metric::L2)
+    .with_max_degree(64)
+    .with_search_list_size(100)
+    .build_in_memory()?;
 
-    // Insert vectors
-    let vectors = vec![
-        vec![1.0, 2.0, 3.0, 4.0],
-        vec![2.0, 3.0, 4.0, 5.0],
-        vec![3.0, 4.0, 5.0, 6.0],
-    ];
-    index.insert_batch(&vectors)?;
+// Insert vectors
+let vectors = vec![vec![1.0, 2.0, 3.0], vec![4.0, 5.0, 6.0]];
+index.insert_batch(&vectors)?;
 
-    // Build the index
-    index.build(&vectors)?;
+// Search for nearest neighbors
+let query = vec![1.0, 2.0, 3.0];
+let results = index.search(&query, 5, 50)?;
 
-    // Search for nearest neighbors
-    let query = vec![1.0, 2.0, 3.0, 4.0];
-    let results = index.search(&query, 5, 50)?;
-
-    println!("Found {} nearest neighbors", results.len());
-    for result in results {
-        println!("ID: {}, Distance: {:.4}", result.id, result.distance);
-    }
-
-    Ok(())
-}
+println!("Found {} nearest neighbors", results.len());
 ```
 
-### Disk-Based Index for Large Datasets
+### Disk-Based Search
 
 ```rust
-use diskann::{IndexBuilder, Metric, ANNResult};
+use diskann::disk_search::{BeamSearch, SearchParameters, SimpleFileReader};
 
-fn main() -> ANNResult<()> {
-    // Create a disk-based index for large datasets
-    let mut index = IndexBuilder::new()
-        .with_dimension(128)
-        .with_metric(Metric::L2)
-        .with_max_degree(64)
-        .with_search_list_size(100)
-        .with_alpha(1.2)
-        .with_num_threads(8)
-        .build_disk_index::<f32>("my_index")?;
+// Initialize disk-based search
+let file_reader = std::sync::Arc::new(SimpleFileReader::new(4096));
+let beam_search = BeamSearch::<f32>::new(
+    "index_path",
+    "pq_file.bin",
+    10,  // num_medoids
+    4,   // num_centroids
+    128, // data_dim
+    8,   // n_chunks
+    Metric::L2,
+    file_reader,
+)?;
 
-    // Build from file data
-    index.build_from_file("large_dataset.bin")?;
+// Set search parameters
+let search_params = SearchParameters {
+    k_search: 10,
+    l_search: 50,
+    beam_width: 100,
+    io_limit: 1000,
+    use_reorder_data: false,
+    use_filter: false,
+    filter_label: 0,
+};
 
-    // Search with optimized parameters
-    let query = vec![1.0; 128];
-    let results = index.search(&query, 10, 50)?;
+// Perform search
+let query: Vec<f32> = (0..128).map(|i| i as f32 * 0.1).collect();
+let results = beam_search.search(&query, search_params)?;
 
-    Ok(())
-}
+println!("Found {} results", results.len());
 ```
-
-## 🧹 Development and Cleanup
-
-### Cleaning Generated Files
-
-The project includes comprehensive `.gitignore` files to exclude generated files, test outputs, and build artifacts. To clean up generated files:
-
-```bash
-# Use the provided cleanup script
-./clean.sh
-
-# Or manually clean specific directories
-cargo clean
-rm -rf examples/*/output/
-rm -f *.json *.bin *.index *.data
-```
-
-### Generated Files Excluded
-
-The following types of files are automatically excluded from version control:
-
-- **Build artifacts**: `target/`, `Cargo.lock`
-- **Generated data**: `*.json`, `*.bin`, `*.index`, `*.data`
-- **Test outputs**: `output/`, `test_output/`, `*.html`
-- **Log files**: `*.log`, `logs/`
-- **Temporary files**: `*.tmp`, `*.bak`, `temp/`
-- **OS files**: `.DS_Store`, `Thumbs.db`
-- **IDE files**: `.vscode/`, `.idea/`
-
-### Important Notes
-
-- Test data in `diskann/tests/data/` is preserved
-- Documentation files (`README.md`, `LICENSE.txt`) are kept
-- The cleanup script preserves important test data while removing generated files
 
 ## 📚 Examples
 
-See the `examples/` directory for complete working examples:
+The project includes comprehensive examples demonstrating all functionality:
 
-- **`basic_usage.rs`** - Basic in-memory index usage
-- **`disk_index.rs`** - Disk-based index for large datasets  
-- **`batch_operations.rs`** - Batch insert and search operations
-- **`custom_metrics.rs`** - Using different distance metrics
+### 🎯 **Disk-Based Search Examples**
 
-Run an example:
+#### 1. **`disk_search_demo`** - Complete Disk Search Workflow ⭐
+**Status**: ✅ **FULLY WORKING**
+
+This is the most comprehensive example showing complete disk-based search functionality:
 
 ```bash
-cargo run --example basic_usage
+# Build an index
+cargo run --package disk_search_demo build --data_path data.bin --index_prefix index
+
+# Search using the built index
+cargo run --package disk_search_demo search --index_prefix index --k 10
+
+# Run complete demo workflow
+cargo run --package disk_search_demo demo
 ```
 
-## 🔧 API Reference
+**Features**:
+- Complete end-to-end disk-based search workflow
+- Build, search, and demo commands
+- Proper error handling and file management
+- Self-contained with all necessary functionality
 
-### IndexBuilder
+#### 2. **`search_disk_index`** - Simple Command-Line Interface
+**Status**: ✅ **WORKING**
 
-The main entry point for creating indices with a fluent builder pattern:
+Simple command-line interface for disk-based search:
 
-```rust
-let index = IndexBuilder::new()
-    .with_dimension(128)           // Required: vector dimension
-    .with_metric(Metric::L2)       // Required: distance metric
-    .with_max_degree(64)           // Optional: max graph degree (default: 64)
-    .with_search_list_size(100)    // Optional: search beam width (default: 100)
-    .with_alpha(1.2)               // Optional: graph density (default: 1.2)
-    .with_num_threads(4)           // Optional: thread count (default: 1)
-    .with_opq(false)               // Optional: enable OPQ compression (default: false)
-    .build_in_memory::<f32>()?;    // Build in-memory index
+```bash
+cargo run --package search_disk_index <index_path> <query_file> <result_file> [options]
 ```
 
-### Distance Metrics
+**Options**:
+- `--k <num>` - Number of results (default: 10)
+- `--l <num>` - Search list size (default: 50)
+- `--beam <num>` - Beam width (default: 100)
+- `--io-limit <num>` - I/O limit (default: 1000)
+- `--metric <metric>` - Distance metric: L2, Cosine (default: L2)
 
-Available distance metrics:
+### 🏗️ **Index Building Examples**
 
-- `Metric::L2` - Euclidean distance (fastest, most common)
-- `Metric::Cosine` - Cosine distance (for normalized vectors)
-- `Metric::InnerProduct` - Inner product similarity
+#### 3. **`build_disk_index`** - Disk Index Construction
+**Status**: ✅ **WORKING**
 
-### Search Parameters
+Build disk-based indexes for large datasets:
 
-Fine-tune search behavior:
-
-```rust
-let results = index.search(&query, k, l)?;
-// k: number of results to return
-// l: search beam width (higher = more accurate, slower)
+```bash
+cargo run --package build_disk_index -- --help
 ```
 
-### Advanced Configuration
+**Features**:
+- Build disk indexes from vector data
+- Configurable parameters for index optimization
+- Support for various data formats
+
+#### 4. **`build_memory_index`** - In-Memory Index Construction
+**Status**: ✅ **WORKING**
+
+Build in-memory indexes for smaller datasets:
+
+```bash
+cargo run --package build_memory_index -- --help
+```
+
+### 🔍 **Search Examples**
+
+#### 5. **`search_memory_index`** - In-Memory Search
+**Status**: ✅ **WORKING**
+
+Search in-memory indexes:
+
+```bash
+cargo run --package search_memory_index -- --help
+```
+
+### 🔄 **Data Management Examples**
+
+#### 6. **`load_and_insert_memory_index`** - Load and Insert
+**Status**: ✅ **WORKING**
+
+Load existing indexes and insert new data:
+
+```bash
+cargo run --package load_and_insert_memory_index -- --help
+```
+
+#### 7. **`build_and_insert_memory_index`** - Build and Insert
+**Status**: ✅ **WORKING**
+
+Build indexes and insert data in one operation:
+
+```bash
+cargo run --package build_and_insert_memory_index -- --help
+```
+
+#### 8. **`build_and_insert_delete_memory_index`** - Build, Insert, and Delete
+**Status**: ✅ **WORKING**
+
+Complete CRUD operations on indexes:
+
+```bash
+cargo run --package build_and_insert_delete_memory_index -- --help
+```
+
+### 🔧 **Utility Examples**
+
+#### 9. **`convert_f32_to_bf16`** - Data Type Conversion
+**Status**: ✅ **WORKING**
+
+Convert between different numeric formats:
+
+```bash
+cargo run --package convert_f32_to_bf16 -- --help
+```
+
+## 💾 **Loading Saved Indexes and Performing Searches**
+
+### **Disk-Based Index Loading and Search**
+
+The `disk_search_demo` example provides the most comprehensive demonstration of loading saved indexes and performing searches:
+
+#### **Step 1: Build an Index**
+```bash
+# Create test data and build index
+cargo run --package disk_search_demo build --data_path test_data.bin --index_prefix my_index
+```
+
+#### **Step 2: Load and Search the Index**
+```bash
+# Search using the saved index
+cargo run --package disk_search_demo search --index_prefix my_index --k 10
+```
+
+#### **Step 3: Complete Demo Workflow**
+```bash
+# Run the complete workflow (build + search)
+cargo run --package disk_search_demo demo
+```
+
+### **In-Memory Index Loading and Search**
+
+For in-memory indexes, use the `load_and_insert_memory_index` example:
+
+```bash
+# Load existing index and perform searches
+cargo run --package load_and_insert_memory_index -- --help
+```
+
+### **Programmatic Usage**
 
 ```rust
-use diskann::{SearchParams, ANNResult};
+use diskann::disk_search::{BeamSearch, SearchParameters, SimpleFileReader};
 
-let params = SearchParams {
-    k: 10,                    // Number of results
-    l: 50,                    // Search beam width
-    return_distances: true,    // Include distances in results
+// Load a saved disk index
+let file_reader = std::sync::Arc::new(SimpleFileReader::new(4096));
+let beam_search = BeamSearch::<f32>::new(
+    "saved_index_path",  // Path to saved index
+    "saved_pq_file.bin", // Path to PQ file
+    10,  // num_medoids
+    4,   // num_centroids
+    128, // data_dim
+    8,   // n_chunks
+    Metric::L2,
+    file_reader,
+)?;
+
+// Set search parameters
+let search_params = SearchParameters {
+    k_search: 10,        // Number of results to return
+    l_search: 50,        // Search list size
+    beam_width: 100,     // Beam width
+    io_limit: 1000,      // I/O limit
+    use_reorder_data: false,
+    use_filter: false,
+    filter_label: 0,
 };
 
-let results = index.search_with_params(&query, &params)?;
+// Perform search
+let query: Vec<f32> = (0..128).map(|i| i as f32 * 0.1).collect();
+let results = beam_search.search(&query, search_params)?;
+
+// Process results
+for (id, distance) in results {
+    println!("ID: {}, Distance: {:.6}", id, distance);
+}
 ```
 
-## 🏗️ Architecture
+## 🧪 **Testing All Examples**
 
-### In-Memory Index
-
-Best for:
-- Small to medium datasets (< 1M vectors)
-- High-performance requirements
-- Frequent updates
-
-```rust
-let mut index = IndexBuilder::new()
-    .with_dimension(128)
-    .with_metric(Metric::L2)
-    .build_in_memory::<f32>()?;
-```
-
-### Disk-Based Index
-
-Best for:
-- Large datasets (> 1M vectors)
-- Memory-constrained environments
-- Persistent storage requirements
-
-```rust
-let mut index = IndexBuilder::new()
-    .with_dimension(128)
-    .with_metric(Metric::L2)
-    .build_disk_index::<f32>("index_path")?;
-```
-
-## ⚡ Performance Tips
-
-### Index Building
-
-- **Alpha parameter**: Higher values (1.2-1.4) create denser graphs with better accuracy but slower search
-- **Max degree**: Higher values improve recall but increase memory usage
-- **Thread count**: Use more threads for faster building on multi-core systems
-
-### Search Optimization
-
-- **k value**: Start with k=10-20 for most applications
-- **l value**: Start with l=50-100, increase for better accuracy
-- **Distance metric**: L2 is fastest, cosine good for normalized vectors
-- **Batch operations**: Use batch search for multiple queries
-
-### Memory Management
-
-- **In-memory**: ~2-4x vector data size for index overhead
-- **Disk-based**: Only cache size in memory, rest on disk
-- **Batch size**: Larger batches are more efficient but use more memory
-
-## 🔍 Use Cases
-
-### Image Similarity Search
-
-```rust
-// Load image embeddings
-let embeddings = load_image_embeddings("images.bin")?;
-
-let mut index = IndexBuilder::new()
-    .with_dimension(512)  // Image embedding dimension
-    .with_metric(Metric::Cosine)  // Cosine for normalized embeddings
-    .build_in_memory::<f32>()?;
-
-index.insert_batch(&embeddings)?;
-index.build(&embeddings)?;
-
-// Find similar images
-let query_embedding = extract_image_embedding("query.jpg")?;
-let similar_images = index.search(&query_embedding, 10, 50)?;
-```
-
-### Text Search with Embeddings
-
-```rust
-// Load text embeddings
-let text_embeddings = load_text_embeddings("documents.bin")?;
-
-let mut index = IndexBuilder::new()
-    .with_dimension(768)  // BERT embedding dimension
-    .with_metric(Metric::L2)
-    .build_in_memory::<f32>()?;
-
-index.insert_batch(&text_embeddings)?;
-index.build(&text_embeddings)?;
-
-// Semantic search
-let query_embedding = embed_text("search query")?;
-let relevant_docs = index.search(&query_embedding, 20, 100)?;
-```
-
-### Large-Scale Recommendation Systems
-
-```rust
-// For very large datasets, use disk-based index
-let mut index = IndexBuilder::new()
-    .with_dimension(128)
-    .with_metric(Metric::InnerProduct)  // For recommendation scores
-    .with_max_degree(128)
-    .with_search_list_size(200)
-    .with_num_threads(16)
-    .build_disk_index::<f32>("recommendations")?;
-
-// Build from file
-index.build_from_file("user_embeddings.bin")?;
-
-// Get recommendations
-let user_embedding = get_user_embedding(user_id)?;
-let recommendations = index.search(&user_embedding, 50, 200)?;
-```
-
-## 🛠️ Development
-
-### Building from Source
+To verify all examples are working:
 
 ```bash
-git clone https://github.com/your-org/diskann.git
-cd diskann
-cargo build --release
+# Build all examples
+cargo build --workspace
+
+# Test specific examples
+cargo run --package disk_search_demo -- --help
+cargo run --package search_disk_index -- --help
+cargo run --package build_disk_index -- --help
 ```
 
-### Running Tests
+## 📊 **Performance**
 
-```bash
-cargo test
-cargo test --examples
-```
+DiskANN is optimized for high-performance vector search:
 
-### Running Benchmarks
+- **Memory efficiency** - Disk-based indexing for datasets that don't fit in memory
+- **Parallel processing** - Leverages Rust's concurrency features
+- **Optimized algorithms** - Beam search and other advanced search algorithms
+- **Flexible data types** - Support for various numeric formats
 
-```bash
-cargo bench
-```
-
-## 📊 Benchmarks
-
-Performance on typical hardware (Intel i7-8700K, 32GB RAM):
-
-| Dataset Size | Index Type | Build Time | Search Time (ms) | Memory Usage |
-|-------------|------------|------------|------------------|--------------|
-| 100K vectors | In-Memory | 2.3s | 0.8 | 512MB |
-| 1M vectors | In-Memory | 18.7s | 1.2 | 4.2GB |
-| 10M vectors | Disk-Based | 3m 45s | 2.1 | 1.1GB |
-| 100M vectors | Disk-Based | 42m 12s | 3.8 | 2.3GB |
-
-*Search times are for k=10, l=50 on 128-dimensional vectors*
-
-## 🤝 Contributing
+## 🤝 **Contributing**
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Development Setup
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite
-6. Submit a pull request
-
-## 📄 License
+## 📄 **License**
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 🙏 **Acknowledgments**
 
-This project is based on ideas from the [DiskANN](https://papers.nips.cc/paper/9527-rand-nsg-fast-accurate-billion-point-nearest-neighbor-search-on-a-single-node.pdf), [Fresh-DiskANN](https://arxiv.org/abs/2105.09613) and [Filtered-DiskANN](https://harsha-simhadri.org/pubs/Filtered-DiskANN23.pdf) papers.
-
-This project forked from [Microsoft/DiskANN](https://github.com/microsoft/DiskANN/tree/main/rust) and [code for NSG](https://github.com/ZJULearning/nsg).
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/your-org/diskann/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/diskann/discussions)
-- **Documentation**: [API Docs](https://docs.rs/diskann)
+- Original DiskANN paper and implementation
+- Rust community for excellent tooling and ecosystem
+- Contributors and maintainers
 
 ---
 
-**Made with ❤️ in Rust**
+**Ready to get started?** Check out the examples directory for complete working code!

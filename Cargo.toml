@@ -8,7 +8,9 @@ members = [
   "examples/cmd_drivers/load_and_insert_memory_index",
   "examples/cmd_drivers/convert_f32_to_bf16",
   "examples/cmd_drivers/search_memory_index",
-  #"examples/cmd_drivers/build_disk_index",
+  "examples/cmd_drivers/build_disk_index",
+  "examples/cmd_drivers/search_disk_index",
+  "examples/cmd_drivers/disk_search_demo",
   "examples/cmd_drivers/build_and_insert_delete_memory_index",
   "vector",
   "diskann",
@@ -21,7 +23,10 @@ members = [
   "examples/cmd_drivers/load_and_insert_memory_index",
   "examples/cmd_drivers/convert_f32_to_bf16",
   "examples/cmd_drivers/search_memory_index",
-  "examples/cmd_drivers/build_and_insert_delete_memory_index"
+      "examples/cmd_drivers/build_and_insert_delete_memory_index",
+    "benchmarks/performance",
+    "benchmarks/comparison",
+    "benchmarks/debug",
 ]
 resolver = "2"
 

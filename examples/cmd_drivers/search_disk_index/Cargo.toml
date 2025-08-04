@@ -1,0 +1,21 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+# Licensed under the MIT license.
+[package]
+name = "search_disk_index"
+version = "0.1.0"
+edition = "2021"
+description = "Command-line tool for searching disk-based DiskANN indices"
+license = "MIT"
+repository = "https://github.com/infinilabs/diskann"
+keywords = ["diskann", "search", "disk", "cli"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+diskann = "0.1.0"
+diskann-vector = "0.1.0"
+num_cpus = "1.16"
+bytemuck = "1.14"
+rayon = "1.8"
+#openblas-src = { version = "0.10.8", features = ["system", "static"] } 

@@ -1,0 +1,14 @@
+[package]
+name = "disk_search_demo"
+version = "0.1.0"
+edition = "2021"
+description = "Comprehensive demo for disk-based DiskANN search"
+license = "MIT"
+repository = "https://github.com/infinilabs/diskann"
+keywords = ["diskann", "search", "disk", "demo"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+diskann = { path = "../../../diskann" }
+diskann-vector = { path = "../../../vector" }
+num_cpus = "1.16" 

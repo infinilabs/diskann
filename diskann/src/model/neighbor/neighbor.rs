@@ -64,14 +64,8 @@ impl Ord for Neighbor {
 
 impl PartialOrd for Neighbor {
     #[inline]
-    fn lt(&self, other: &Self) -> bool {
-        self.distance < other.distance || (self.distance == other.distance && self.id < other.id)
-    }
-
-    // Reason for allowing panic = "Does not support comparing Neighbor with partial_cmp"
-    #[allow(clippy::panic)]
-    fn partial_cmp(&self, _: &Self) -> Option<std::cmp::Ordering> {
-        panic!("Neighbor only allows eq and lt")
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -91,20 +85,25 @@ mod neighbor_test {
     }
 
     #[test]
-    #[should_panic]
-    fn gt_should_panic() {
+    fn full_ordering_works() {
         let n1 = Neighbor::new(1, 1.1);
         let n2 = Neighbor::new(2, 2.0);
+        let n3 = Neighbor::new(3, 1.1);
 
+        assert!(n1 < n2);
         assert!(n2 > n1);
+        assert!(n1 <= n2);
+        assert!(n2 >= n1);
+        assert!(n1 <= n3); // Same distance, different ID
+        assert!(n3 >= n1);
     }
 
     #[test]
-    #[should_panic]
-    fn le_should_panic() {
-        let n1 = Neighbor::new(1, 1.1);
-        let n2 = Neighbor::new(2, 2.0);
+    fn ordering_with_same_distance() {
+        let n1 = Neighbor::new(1, 1.0);
+        let n2 = Neighbor::new(2, 1.0);
 
-        assert!(n1 <= n2);
+        assert!(n1 < n2); // Lower ID comes first
+        assert!(n2 > n1);
     }
 }

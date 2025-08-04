@@ -17,7 +17,69 @@ use diskann::{
     utils::{load_metadata_from_file, Timer},
 };
 
-use vector::{FullPrecisionDistance, Half, Metric};
+use diskann_vector::{FullPrecisionDistance, Half, Metric};
+
+/// Configuration for building a disk index
+#[derive(Debug)]
+struct BuildConfig {
+    data_type: String,
+    dist_fn: String,
+    data_path: String,
+    index_path_prefix: String,
+    max_degree: u32,
+    l_build: u32,
+    num_threads: u32,
+    search_ram_limit_gb: f64,
+    build_ram_limit_gb: f64,
+    build_pq_bytes: u32,
+    use_opq: bool,
+}
+
+impl BuildConfig {
+    fn new() -> Self {
+        Self {
+            data_type: String::new(),
+            dist_fn: String::new(),
+            data_path: String::new(),
+            index_path_prefix: String::new(),
+            max_degree: 64,
+            l_build: 100,
+            num_threads: 0, // Will be set to CPU count if 0
+            search_ram_limit_gb: 0.0,
+            build_ram_limit_gb: 0.0,
+            build_pq_bytes: 0,
+            use_opq: false,
+        }
+    }
+
+    fn validate(&self) -> ANNResult<()> {
+        if self.data_type.is_empty() {
+            return Err(ANNError::log_index_config_error(
+                "data_type".to_string(),
+                "Missing required argument: --data_type".to_string(),
+            ));
+        }
+        if self.dist_fn.is_empty() {
+            return Err(ANNError::log_index_config_error(
+                "dist_fn".to_string(),
+                "Missing required argument: --dist_fn".to_string(),
+            ));
+        }
+        if self.data_path.is_empty() {
+            return Err(ANNError::log_index_config_error(
+                "data_path".to_string(),
+                "Missing required argument: --data_path".to_string(),
+            ));
+        }
+        if self.index_path_prefix.is_empty() {
+            return Err(ANNError::log_index_config_error(
+                "index_path_prefix".to_string(),
+                "Missing required argument: --index_path_prefix".to_string(),
+            ));
+        }
+        Ok(())
+    }
+}
 
 /// The main function to build a disk index
 #[allow(clippy::too_many_arguments)]
@@ -40,6 +102,13 @@ where
     [T; DIM_256]: FullPrecisionDistance<T, DIM_256>,
     [T; DIM_512]: FullPrecisionDistance<T, DIM_512>,
 {
+    println!("📊 Loading data metadata...");
+    let (data_num, data_dim) = load_metadata_from_file(data_path)?;
+    println!("  - Data points: {}", data_num);
+    println!("  - Dimensions: {}", data_dim);
+    println!();
+
+    println!("⚙️  Configuring index parameters...");
     let disk_index_build_parameters =
         DiskIndexBuildParameters::new(search_ram_limit_gb, index_build_ram_limit_gb)?;
 
@@ -47,8 +116,6 @@ where
         .with_saturate_graph(true)
         .with_num_threads(num_threads)
         .build();
-
-    let (data_num, data_dim) = load_metadata_from_file(data_path)?;
 
     let config = IndexConfiguration::new(
         metric,
@@ -62,15 +129,42 @@ where
         1f32,
         index_write_parameters,
     );
+    println!("  - Index configuration created");
+    println!();
+
+    println!("💾 Initializing disk storage...");
     let storage = DiskIndexStorage::new(data_path.to_string(), index_path_prefix.to_string())?;
+    println!("  - Storage initialized");
+    println!();
+
+    println!("🔨 Creating disk index...");
     let mut index = create_disk_index::<T>(Some(disk_index_build_parameters), config, storage)?;
+    println!("  - Index created");
+    println!();
+
+    println!("🚀 Starting index build process...");
+    println!("  - This may take a while depending on dataset size and parameters");
+    println!(
+        "  - Building graph with {} points, {} dimensions",
+        data_num, data_dim
+    );
+    println!("  - Max degree: {}, Build complexity: {}", r, l);
+    println!();
 
     let timer = Timer::new();
-
     index.build("")?;
+    let build_time = timer.elapsed().unwrap_or_default();
 
-    let diff = timer.elapsed();
-    println!("Indexing time: {}", diff.as_secs_f64());
+    println!("✅ Index build completed!");
+    println!(
+        "  - Total build time: {:.2} seconds",
+        build_time.as_secs_f64()
+    );
+    println!(
+        "  - Build rate: {:.2} points/second",
+        data_num as f64 / build_time.as_secs_f64()
+    );
+    println!("  - Index files saved with prefix: {}", index_path_prefix);
 
     Ok(())
 }
@@ -78,20 +172,8 @@ where
 fn main() -> ANNResult<()> {
     // Initialize tracing
     diskann::instrumentation::init_tracing();
-    let mut data_type = String::new();
-    let mut dist_fn = String::new();
-    let mut data_path = String::new();
-    let mut index_path_prefix = String::new();
 
-    let mut num_threads = 0u32;
-    let mut r = 64u32;
-    let mut l = 100u32;
-    let mut search_ram_limit_gb = 0f64;
-    let mut index_build_ram_limit_gb = 0f64;
-
-    let mut build_pq_bytes = 0u32;
-    let mut use_opq = false;
-
+    let mut config = BuildConfig::new();
     let args: Vec<String> = env::args().collect();
     let mut iter = args.iter().skip(1).peekable();
 
@@ -102,7 +184,7 @@ fn main() -> ANNResult<()> {
                 return Ok(());
             }
             "--data_type" => {
-                data_type = iter
+                config.data_type = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
@@ -113,7 +195,7 @@ fn main() -> ANNResult<()> {
                     .to_owned();
             }
             "--dist_fn" => {
-                dist_fn = iter
+                config.dist_fn = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
@@ -124,7 +206,7 @@ fn main() -> ANNResult<()> {
                     .to_owned();
             }
             "--data_path" => {
-                data_path = iter
+                config.data_path = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
@@ -135,7 +217,7 @@ fn main() -> ANNResult<()> {
                     .to_owned();
             }
             "--index_path_prefix" => {
-                index_path_prefix = iter
+                config.index_path_prefix = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
@@ -146,7 +228,7 @@ fn main() -> ANNResult<()> {
                     .to_owned();
             }
             "--max_degree" | "-R" => {
-                r = iter
+                config.max_degree = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
@@ -163,7 +245,7 @@ fn main() -> ANNResult<()> {
                     })?;
             }
             "--Lbuild" | "-L" => {
-                l = iter
+                config.l_build = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
@@ -180,7 +262,7 @@ fn main() -> ANNResult<()> {
                     })?;
             }
             "--num_threads" | "-T" => {
-                num_threads = iter
+                config.num_threads = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
@@ -197,7 +279,7 @@ fn main() -> ANNResult<()> {
                     })?;
             }
             "--build_PQ_bytes" => {
-                build_pq_bytes = iter
+                config.build_pq_bytes = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
@@ -214,7 +296,7 @@ fn main() -> ANNResult<()> {
                     })?;
             }
             "--use_opq" => {
-                use_opq = iter
+                config.use_opq = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
@@ -231,36 +313,36 @@ fn main() -> ANNResult<()> {
                     })?;
             }
             "--search_DRAM_budget" | "-B" => {
-                search_ram_limit_gb = iter
+                config.search_ram_limit_gb = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
                             "search_DRAM_budget".to_string(),
-                            "Missing search_DRAM_budget flag".to_string(),
+                            "Missing search_DRAM_budget value".to_string(),
                         )
                     })?
                     .parse()
                     .map_err(|err| {
                         ANNError::log_index_config_error(
                             "search_DRAM_budget".to_string(),
-                            format!("ParseBoolError: {}", err),
+                            format!("ParseFloatError: {}", err),
                         )
                     })?;
             }
             "--build_DRAM_budget" | "-M" => {
-                index_build_ram_limit_gb = iter
+                config.build_ram_limit_gb = iter
                     .next()
                     .ok_or_else(|| {
                         ANNError::log_index_config_error(
                             "build_DRAM_budget".to_string(),
-                            "Missing build_DRAM_budget flag".to_string(),
+                            "Missing build_DRAM_budget value".to_string(),
                         )
                     })?
                     .parse()
                     .map_err(|err| {
                         ANNError::log_index_config_error(
                             "build_DRAM_budget".to_string(),
-                            format!("ParseBoolError: {}", err),
+                            format!("ParseFloatError: {}", err),
                         )
                     })?;
             }
@@ -273,108 +355,159 @@ fn main() -> ANNResult<()> {
         }
     }
 
-    if data_type.is_empty()
-        || dist_fn.is_empty()
-        || data_path.is_empty()
-        || index_path_prefix.is_empty()
-    {
-        return Err(ANNError::log_index_config_error(
-            String::from(""),
-            "Missing required arguments".to_string(),
-        ));
+    // Validate configuration
+    config.validate()?;
+
+    // Set default number of threads if not specified
+    if config.num_threads == 0 {
+        config.num_threads = num_cpus::get() as u32;
     }
 
-    let metric = dist_fn
+    let metric = config
+        .dist_fn
         .parse::<Metric>()
         .map_err(|err| ANNError::log_index_config_error("dist_fn".to_string(), err.to_string()))?;
 
-    println!(
-        "Starting index build with R: {}  Lbuild: {}  alpha: {}  #threads: {} search_DRAM_budget: {} build_DRAM_budget: {}",
-        r, l, ALPHA, num_threads, search_ram_limit_gb, index_build_ram_limit_gb
-    );
+    println!("🚀 Starting DiskANN disk index build");
+    println!("=====================================");
+    println!("Configuration:");
+    println!("  Data type: {}", config.data_type);
+    println!("  Distance function: {}", config.dist_fn);
+    println!("  Data path: {}", config.data_path);
+    println!("  Index path prefix: {}", config.index_path_prefix);
+    println!("  Max degree (R): {}", config.max_degree);
+    println!("  Build complexity (L): {}", config.l_build);
+    println!("  Alpha: {}", ALPHA);
+    println!("  Threads: {}", config.num_threads);
+    println!("  Search RAM budget: {:.2} GB", config.search_ram_limit_gb);
+    println!("  Build RAM budget: {:.2} GB", config.build_ram_limit_gb);
+    println!("  PQ bytes: {}", config.build_pq_bytes);
+    println!("  Use OPQ: {}", config.use_opq);
+    println!();
 
-    let err = match data_type.as_str() {
+    let result = match config.data_type.as_str() {
         "int8" => build_disk_index::<i8>(
             metric,
-            &data_path,
-            r,
-            l,
-            &index_path_prefix,
-            num_threads,
-            search_ram_limit_gb,
-            index_build_ram_limit_gb,
-            build_pq_bytes as usize,
-            use_opq,
+            &config.data_path,
+            config.max_degree,
+            config.l_build,
+            &config.index_path_prefix,
+            config.num_threads,
+            config.search_ram_limit_gb,
+            config.build_ram_limit_gb,
+            config.build_pq_bytes as usize,
+            config.use_opq,
         ),
         "uint8" => build_disk_index::<u8>(
             metric,
-            &data_path,
-            r,
-            l,
-            &index_path_prefix,
-            num_threads,
-            search_ram_limit_gb,
-            index_build_ram_limit_gb,
-            build_pq_bytes as usize,
-            use_opq,
+            &config.data_path,
+            config.max_degree,
+            config.l_build,
+            &config.index_path_prefix,
+            config.num_threads,
+            config.search_ram_limit_gb,
+            config.build_ram_limit_gb,
+            config.build_pq_bytes as usize,
+            config.use_opq,
         ),
         "float" => build_disk_index::<f32>(
             metric,
-            &data_path,
-            r,
-            l,
-            &index_path_prefix,
-            num_threads,
-            search_ram_limit_gb,
-            index_build_ram_limit_gb,
-            build_pq_bytes as usize,
-            use_opq,
+            &config.data_path,
+            config.max_degree,
+            config.l_build,
+            &config.index_path_prefix,
+            config.num_threads,
+            config.search_ram_limit_gb,
+            config.build_ram_limit_gb,
+            config.build_pq_bytes as usize,
+            config.use_opq,
         ),
         "f16" => build_disk_index::<Half>(
             metric,
-            &data_path,
-            r,
-            l,
-            &index_path_prefix,
-            num_threads,
-            search_ram_limit_gb,
-            index_build_ram_limit_gb,
-            build_pq_bytes as usize,
-            use_opq,
+            &config.data_path,
+            config.max_degree,
+            config.l_build,
+            &config.index_path_prefix,
+            config.num_threads,
+            config.search_ram_limit_gb,
+            config.build_ram_limit_gb,
+            config.build_pq_bytes as usize,
+            config.use_opq,
         ),
         _ => {
-            println!("Unsupported type. Use one of int8, uint8, float or f16.");
+            println!("❌ Unsupported data type: {}", config.data_type);
+            println!("Supported types: int8, uint8, float, f16");
             return Err(ANNError::log_index_config_error(
                 "data_type".to_string(),
-                "Invalid data type".to_string(),
+                format!("Invalid data type: {}", config.data_type),
             ));
         }
     };
 
-    match err {
+    match result {
         Ok(_) => {
-            println!("Index build completed successfully");
+            println!("✅ Index build completed successfully!");
+            println!(
+                "📁 Index files saved with prefix: {}",
+                config.index_path_prefix
+            );
             Ok(())
         }
         Err(err) => {
-            eprintln!("Error: {:?}", err);
+            eprintln!("❌ Error building index: {:?}", err);
             Err(err)
         }
     }
 }
 
 fn print_help() {
-    println!("Arguments");
-    println!("--help, -h                Print information on arguments");
-    println!("--data_type               data type <int8/uint8/float> (required)");
-    println!("--dist_fn                 distance function <l2/cosine> (required)");
-    println!("--data_path               Input data file in bin format (required)");
-    println!("--index_path_prefix       Path prefix for saving index file components (required)");
-    println!("--max_degree, -R          Maximum graph degree (default: 64)");
-    println!("--Lbuild, -L              Build complexity, higher value results in better graphs (default: 100)");
-    println!("--search_DRAM_budget      Bound on the memory footprint of the index at search time in GB. Once built, the index will use up only the specified RAM limit, the rest will reside on disk");
-    println!("--build_DRAM_budget       Limit on the memory allowed for building the index in GB");
-    println!("--num_threads, -T         Number of threads used for building index (defaults to num of CPU logic cores)");
-    println!("--build_PQ_bytes          Number of PQ bytes to build the index; 0 for full precision build (default: 0)");
-    println!("--use_opq                 Set true for OPQ compression while using PQ distance comparisons for building the index, and false for PQ compression (default: false)");
+    println!("🚀 DiskANN Disk Index Builder");
+    println!("==============================");
+    println!();
+    println!("Builds a disk-based DiskANN index for large-scale vector search.");
+    println!();
+    println!("USAGE:");
+    println!("  cargo run --bin build_disk_index [OPTIONS]");
+    println!();
+    println!("REQUIRED ARGUMENTS:");
+    println!("  --data_type <TYPE>           Data type: int8, uint8, float, f16");
+    println!("  --dist_fn <FUNCTION>         Distance function: l2, cosine");
+    println!("  --data_path <PATH>           Input data file in binary format");
+    println!("  --index_path_prefix <PREFIX> Path prefix for saving index files");
+    println!();
+    println!("OPTIONAL ARGUMENTS:");
+    println!("  --help, -h                   Show this help message");
+    println!("  --max_degree, -R <N>         Maximum graph degree (default: 64)");
+    println!("  --Lbuild, -L <N>             Build complexity (default: 100)");
+    println!("  --num_threads, -T <N>        Number of threads (default: CPU cores)");
+    println!("  --search_DRAM_budget <GB>    Search RAM limit in GB");
+    println!("  --build_DRAM_budget <GB>     Build RAM limit in GB");
+    println!("  --build_PQ_bytes <N>         PQ compression bytes (default: 0)");
+    println!("  --use_opq <BOOL>             Use OPQ compression (default: false)");
+    println!();
+    println!("EXAMPLES:");
+    println!("  # Build a basic index");
+    println!("  cargo run --bin build_disk_index \\");
+    println!("    --data_type float \\");
+    println!("    --dist_fn l2 \\");
+    println!("    --data_path data/vectors.bin \\");
+    println!("    --index_path_prefix data/index");
+    println!();
+    println!("  # Build with custom parameters");
+    println!("  cargo run --bin build_disk_index \\");
+    println!("    --data_type float \\");
+    println!("    --dist_fn cosine \\");
+    println!("    --data_path data/vectors.bin \\");
+    println!("    --index_path_prefix data/index \\");
+    println!("    --max_degree 128 \\");
+    println!("    --Lbuild 200 \\");
+    println!("    --num_threads 8 \\");
+    println!("    --search_DRAM_budget 4.0 \\");
+    println!("    --build_DRAM_budget 8.0");
+    println!();
+    println!("NOTES:");
+    println!("  - Higher Lbuild values result in better graph quality but slower builds");
+    println!("  - RAM budgets control memory usage during build and search");
+    println!("  - PQ compression reduces index size but may affect accuracy");
+    println!("  - Use OPQ for better compression with minimal accuracy loss");
 }
